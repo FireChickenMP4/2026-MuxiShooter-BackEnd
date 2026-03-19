@@ -106,7 +106,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "admin-get"
+                    "admin-resource"
                 ],
                 "summary": "管理员按类型查询基础资源",
                 "parameters": [
@@ -262,7 +262,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "admin-operation"
+                    "admin-resource"
                 ],
                 "summary": "管理员按类型创建基础资源",
                 "parameters": [
@@ -390,7 +390,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "admin-update"
+                    "admin-resource"
                 ],
                 "summary": "管理员按类型更新基础资源",
                 "parameters": [
@@ -764,7 +764,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile"
+                    "profile-operation"
                 ],
                 "summary": "用户登出（token版号增加一）",
                 "responses": {
@@ -799,7 +799,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile"
+                    "profile-update"
                 ],
                 "summary": "修改用户头像",
                 "parameters": [
@@ -861,7 +861,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile"
+                    "profile-update"
                 ],
                 "summary": "修改用户密码",
                 "parameters": [
@@ -925,7 +925,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile"
+                    "profile-update"
                 ],
                 "summary": "修改用户名",
                 "parameters": [

@@ -329,7 +329,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 管理员按类型查询基础资源
       tags:
-      - admin-get
+      - admin-resource
   /api/admin/operation/deleteuser:
     delete:
       consumes:
@@ -460,7 +460,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 管理员按类型创建基础资源
       tags:
-      - admin-operation
+      - admin-resource
   /api/admin/update/resources:
     put:
       consumes:
@@ -511,7 +511,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 管理员按类型更新基础资源
       tags:
-      - admin-update
+      - admin-resource
   /api/admin/update/usergroup:
     put:
       consumes:
@@ -725,7 +725,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 用户登出（token版号增加一）
       tags:
-      - profile
+      - profile-operation
   /api/profile/update/headimage:
     put:
       consumes:
@@ -766,7 +766,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 修改用户头像
       tags:
-      - profile
+      - profile-update
   /api/profile/update/password:
     put:
       consumes:
@@ -808,7 +808,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 修改用户密码
       tags:
-      - profile
+      - profile-update
   /api/profile/update/username:
     put:
       consumes:
@@ -850,7 +850,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 修改用户名
       tags:
-      - profile
+      - profile-update
 securityDefinitions:
   BearerAuth:
     description: 输入你的Bearer Token，格式：Bearer {token}

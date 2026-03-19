@@ -196,7 +196,7 @@ func Login(c *gin.Context) {
 
 // @Summary		用户登出（token版号增加一）
 // @Description	用户登出（token版号增加一）
-// @Tags			profile
+// @Tags			profile-operation
 // @Produce		json
 // @Success		200	{object}	dto.Response	"登出成功"
 // @Failure		401	{object}	dto.Response	"用户不存在"
@@ -244,7 +244,7 @@ func Logout(c *gin.Context) {
 
 // @Summary		修改用户密码
 // @Description	修改用户密码(修改完前端请删掉token并跳转登录页面)
-// @Tags			profile
+// @Tags			profile-update
 // @Accept			json
 // @Produce		json
 // @Param			request	body		dto.UpdatePasswordRequest	true	"修改密码请求"
@@ -389,7 +389,7 @@ func UpdatePassword(c *gin.Context) {
 
 // @Summary		修改用户名
 // @Description	修改用户名
-// @Tags			profile
+// @Tags			profile-update
 // @Accept			json
 // @Produce		json
 // @Param			request	body		dto.UpdateUsernameRequest	true	"修改用户名请求"
@@ -497,7 +497,7 @@ func UpdateUsername(c *gin.Context) {
 
 // @Summary		修改用户头像
 // @Description	修改用户头像
-// @Tags			profile
+// @Tags			profile-update
 // @Accept			multipart/form-data
 // @Produce		json
 // @Param			new_head_image	formData	file			true	"新头像"
@@ -932,7 +932,7 @@ func UpdateUserGroupByAdmin(c *gin.Context) {
 
 // @Summary		管理员按类型查询基础资源
 // @Description	通过query参数type查询skills/achievements/items/cards；支持分页与可选id精确查询
-// @Tags			admin-get
+// @Tags			admin-resource
 // @Produce		json
 // @Param			type		query		string									true	"资源类型(achievements/skills/items/cards)"
 // @Param			id			query		int										false	"资源ID，传入后优先精确查询"
@@ -986,7 +986,7 @@ func GetResourcesByTypeForAdmin(c *gin.Context) {
 // @Description	skills需要额外参数skill_group和prq_skill_id，其他资源只需要公共请求体
 // @Description	type=achievements/items/cards body: dto.CommonResourceCreateRequest
 // @Description	type=skills body: dto.CommonResourceCreateRequest (optional skill_group, prq_skill_id)
-// @Tags			admin-operation
+// @Tags			admin-resource
 // @Accept			json
 // @Produce		json
 // @Param			type	query		string							true	"资源类型(achievements/skills/items/cards)"
@@ -1040,7 +1040,7 @@ func CreateResourceByTypeForAdmin(c *gin.Context) {
 // @Description	skills需要额外参数skill_group和prq_skill_id，其他资源只需要公共请求体
 // @Description	type=achievements/items/cards body: dto.CommonResourceUpdateRequest
 // @Description	type=skills body: dto.CommonResourceUpdateRequest (optional skill_group, prq_skill_id)
-// @Tags			admin-update
+// @Tags			admin-resource
 // @Accept			json
 // @Produce		json
 // @Param			type	query		string							true	"资源类型(achievements/skills/items/cards)"
