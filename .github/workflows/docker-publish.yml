@@ -94,8 +94,6 @@ jobs:
               exit 1
             fi
 
-            retry 5 5 sh -c 'echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin'
-
             NEW_TAG="${{ github.sha }}"
             PREV_TAG="$(docker compose ps -q app | xargs -r docker inspect --format '{{.Config.Image}}' 2>/dev/null | sed -n 's|.*:||p' | head -n1)"
             if [ -z "$PREV_TAG" ] && [ -f .last_app_tag ]; then
