@@ -30,7 +30,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "admin-get"
+                    "admin-user"
                 ],
                 "summary": "获取用户列表",
                 "parameters": [
@@ -101,12 +101,12 @@ const docTemplate = `{
         },
         "/api/admin/get/resources": {
             "get": {
-                "description": "通过query参数type查询skills/achievements/items/cards；支持分页与可选id精确查询\ntype可选值：achievements、skills、items、cards\ntype=achievements 时，data.list 为 []models.Achievement\ntype=skills 时，data.list 为 []models.Skill\ntype=items 时，data.list 为 []models.Item\ntype=cards 时，data.list 为 []models.Card",
+                "description": "通过query参数type查询skills/achievements/items/cards；支持分页与可选id精确查询\ntype可选值：achievements、skills、items、cards\ntype=achievements 时，data.list 为 []dto.AdminAchievementData\ntype=skills 时，data.list 为 []dto.AdminSkillData\ntype=items 时，data.list 为 []dto.AdminItemData\ntype=cards 时，data.list 为 []dto.AdminCardData",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "admin-get"
+                    "admin-resource"
                 ],
                 "summary": "管理员按类型查询基础资源",
                 "parameters": [
@@ -150,7 +150,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "type=cards 查询成功",
+                        "description": "查询成功(data.list类型由type决定)",
                         "schema": {
                             "allOf": [
                                 {
@@ -198,7 +198,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "admin-operation"
+                    "admin-user"
                 ],
                 "summary": "管理员删除用户",
                 "parameters": [
@@ -254,7 +254,7 @@ const docTemplate = `{
         },
         "/api/admin/operation/resources": {
             "post": {
-                "description": "通过query参数type创建skills/achievements/items/cards中的一种资源\ntype=achievements 请求体：dto.AdminCreateAchievementRequest\ntype=skills 请求体：dto.AdminCreateSkillRequest\ntype=items 请求体：dto.AdminCreateItemRequest\ntype=cards 请求体：dto.AdminCreateCardRequest\ntype=achievements 时，data 为 models.Achievement\ntype=skills 时，data 为 models.Skill\ntype=items 时，data 为 models.Item\ntype=cards 时，data 为 models.Card",
+                "description": "通过query参数type创建skills/achievements/items/cards中的一种资源\ntype=achievements 请求体：dto.AdminCreateAchievementRequest\ntype=skills 请求体：dto.AdminCreateSkillRequest\ntype=items 请求体：dto.AdminCreateItemRequest\ntype=cards 请求体：dto.AdminCreateCardRequest\n请求体示例(type=achievements): {\"name\":\"首胜\",\"description\":\"首次获胜成就\"}\n请求体示例(type=skills): {\"name\":\"冲刺\",\"description\":\"短时间提速\",\"skill_group\":\"move\",\"prq_skill_id\":0}\n请求体示例(type=items): {\"name\":\"急救包\",\"description\":\"恢复生命值\"}\n请求体示例(type=cards): {\"name\":\"护盾卡\",\"description\":\"短时间免疫伤害\"}\ntype=achievements 时，data 为 dto.AdminAchievementData\ntype=skills 时，data 为 dto.AdminSkillData\ntype=items 时，data 为 dto.AdminItemData\ntype=cards 时，data 为 dto.AdminCardData",
                 "consumes": [
                     "application/json"
                 ],
@@ -262,7 +262,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "admin-operation"
+                    "admin-resource"
                 ],
                 "summary": "管理员按类型创建基础资源",
                 "parameters": [
@@ -285,21 +285,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "type=cards 创建成功",
+                        "description": "创建成功(data类型由type决定)",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/dto.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/models.Card"
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/dto.Response"
                         }
                     },
                     "400": {
@@ -337,7 +325,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "admin-operation"
+                    "admin-resource"
                 ],
                 "summary": "管理员按类型删除基础资源",
                 "parameters": [
@@ -394,7 +382,7 @@ const docTemplate = `{
         },
         "/api/admin/update/resources": {
             "put": {
-                "description": "通过query参数type更新skills/achievements/items/cards中的一种资源\ntype=achievements 请求体：dto.AdminUpdateAchievementRequest\ntype=skills 请求体：dto.AdminUpdateSkillRequest\ntype=items 请求体：dto.AdminUpdateItemRequest\ntype=cards 请求体：dto.AdminUpdateCardRequest\ntype=achievements 时，data 为 models.Achievement\ntype=skills 时，data 为 models.Skill\ntype=items 时，data 为 models.Item\ntype=cards 时，data 为 models.Card",
+                "description": "通过query参数type更新skills/achievements/items/cards中的一种资源\ntype=achievements 请求体：dto.AdminUpdateAchievementRequest\ntype=skills 请求体：dto.AdminUpdateSkillRequest\ntype=items 请求体：dto.AdminUpdateItemRequest\ntype=cards 请求体：dto.AdminUpdateCardRequest\n请求体示例(type=achievements): {\"id\":1,\"name\":\"首胜(改)\",\"description\":\"首次获胜成就(改)\"}\n请求体示例(type=skills): {\"id\":1,\"name\":\"冲刺(改)\",\"description\":\"短时间提速(改)\",\"skill_group\":\"move\",\"prq_skill_id\":0}\n请求体示例(type=items): {\"id\":1,\"name\":\"急救包(改)\",\"description\":\"恢复生命值(改)\"}\n请求体示例(type=cards): {\"id\":1,\"name\":\"护盾卡(改)\",\"description\":\"短时间免疫伤害(改)\"}\ntype=achievements 时，data 为 dto.AdminAchievementData\ntype=skills 时，data 为 dto.AdminSkillData\ntype=items 时，data 为 dto.AdminItemData\ntype=cards 时，data 为 dto.AdminCardData",
                 "consumes": [
                     "application/json"
                 ],
@@ -402,7 +390,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "admin-update"
+                    "admin-resource"
                 ],
                 "summary": "管理员按类型更新基础资源",
                 "parameters": [
@@ -425,21 +413,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "type=cards 更新成功",
+                        "description": "更新成功(data类型由type决定)",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/dto.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/models.Card"
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/dto.Response"
                         }
                     },
                     "400": {
@@ -485,7 +461,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "admin-update"
+                    "admin-user"
                 ],
                 "summary": "管理员修改用户权限组",
                 "parameters": [
@@ -674,7 +650,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile-get"
+                    "profile"
                 ],
                 "summary": "按类型获取用户关联数据",
                 "parameters": [
@@ -700,7 +676,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "type=cards 查询成功",
+                        "description": "查询成功(data.list类型由type决定)",
                         "schema": {
                             "allOf": [
                                 {
@@ -710,7 +686,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.UserCardRelationPageData"
+                                            "$ref": "#/definitions/dto.PaginatedData"
                                         }
                                     }
                                 }
@@ -744,7 +720,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile-get"
+                    "profile"
                 ],
                 "summary": "获取用户自身基础信息",
                 "responses": {
@@ -788,7 +764,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile-operation"
+                    "profile"
                 ],
                 "summary": "用户登出（token版号增加一）",
                 "responses": {
@@ -823,7 +799,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile-update"
+                    "profile"
                 ],
                 "summary": "修改用户头像",
                 "parameters": [
@@ -885,7 +861,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile-update"
+                    "profile"
                 ],
                 "summary": "修改用户密码",
                 "parameters": [
@@ -949,7 +925,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile-update"
+                    "profile"
                 ],
                 "summary": "修改用户名",
                 "parameters": [
@@ -1005,20 +981,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.AchievementBrief": {
-            "type": "object",
-            "properties": {
-                "achievement_id": {
-                    "type": "integer"
-                },
-                "achievement_name": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.AdminCreateSkillRequest": {
             "type": "object",
             "required": [
@@ -1129,20 +1091,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CardBrief": {
-            "type": "object",
-            "properties": {
-                "card_id": {
-                    "type": "integer"
-                },
-                "card_name": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.CommonUserData": {
             "type": "object",
             "properties": {
@@ -1168,20 +1116,6 @@ const docTemplate = `{
                 },
                 "username": {
                     "description": "用户名",
-                    "type": "string"
-                }
-            }
-        },
-        "dto.ItemBrief": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "item_id": {
-                    "type": "integer"
-                },
-                "item_name": {
                     "type": "string"
                 }
             }
@@ -1259,26 +1193,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SkillBrief": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "prq_skill_id": {
-                    "type": "integer"
-                },
-                "skill_group": {
-                    "type": "string"
-                },
-                "skill_id": {
-                    "type": "integer"
-                },
-                "skill_name": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.UpdatePasswordRequest": {
             "description": "修改密码",
             "type": "object",
@@ -1308,280 +1222,6 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 20,
                     "minLength": 3
-                }
-            }
-        },
-        "dto.UserAchievementRelationData": {
-            "type": "object",
-            "properties": {
-                "achievement": {
-                    "$ref": "#/definitions/dto.AchievementBrief"
-                },
-                "claimed": {
-                    "type": "boolean"
-                },
-                "claimed_at": {
-                    "type": "string"
-                },
-                "complete_at": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "is_complete": {
-                    "type": "boolean"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.UserAchievementRelationPageData": {
-            "type": "object",
-            "properties": {
-                "list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.UserAchievementRelationData"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.UserCardRelationData": {
-            "type": "object",
-            "properties": {
-                "card": {
-                    "$ref": "#/definitions/dto.CardBrief"
-                },
-                "claimed": {
-                    "type": "boolean"
-                },
-                "claimed_at": {
-                    "type": "string"
-                },
-                "complete_at": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "is_complete": {
-                    "type": "boolean"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.UserCardRelationPageData": {
-            "type": "object",
-            "properties": {
-                "list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.UserCardRelationData"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.UserItemRelationData": {
-            "type": "object",
-            "properties": {
-                "claimed": {
-                    "type": "boolean"
-                },
-                "claimed_at": {
-                    "type": "string"
-                },
-                "complete_at": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "is_complete": {
-                    "type": "boolean"
-                },
-                "item": {
-                    "$ref": "#/definitions/dto.ItemBrief"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.UserItemRelationPageData": {
-            "type": "object",
-            "properties": {
-                "list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.UserItemRelationData"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.UserSkillRelationData": {
-            "type": "object",
-            "properties": {
-                "claimed": {
-                    "type": "boolean"
-                },
-                "claimed_at": {
-                    "type": "string"
-                },
-                "complete_at": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "is_complete": {
-                    "type": "boolean"
-                },
-                "skill": {
-                    "$ref": "#/definitions/dto.SkillBrief"
-                },
-                "skill_grade": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.UserSkillRelationPageData": {
-            "type": "object",
-            "properties": {
-                "list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.UserSkillRelationData"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.Achievement": {
-            "type": "object",
-            "properties": {
-                "achievement_id": {
-                    "type": "integer"
-                },
-                "achievement_name": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.Card": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "skill_id": {
-                    "type": "integer"
-                },
-                "skill_name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.Item": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "skill_id": {
-                    "type": "integer"
-                },
-                "skill_name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.Skill": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "prq_skill_id": {
-                    "type": "integer"
-                },
-                "skill_group": {
-                    "description": "Front End Products Design Operations Apple Android",
-                    "type": "string"
-                },
-                "skill_id": {
-                    "type": "integer"
-                },
-                "skill_name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
                 }
             }
         }

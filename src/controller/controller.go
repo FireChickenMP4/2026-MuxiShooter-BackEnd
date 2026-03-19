@@ -196,7 +196,7 @@ func Login(c *gin.Context) {
 
 // @Summary		用户登出（token版号增加一）
 // @Description	用户登出（token版号增加一）
-// @Tags			profile-operation
+// @Tags			profile
 // @Produce		json
 // @Success		200	{object}	dto.Response	"登出成功"
 // @Failure		401	{object}	dto.Response	"用户不存在"
@@ -244,7 +244,7 @@ func Logout(c *gin.Context) {
 
 // @Summary		修改用户密码
 // @Description	修改用户密码(修改完前端请删掉token并跳转登录页面)
-// @Tags			profile-update
+// @Tags			profile
 // @Accept			json
 // @Produce		json
 // @Param			request	body		dto.UpdatePasswordRequest	true	"修改密码请求"
@@ -356,6 +356,7 @@ func UpdatePassword(c *gin.Context) {
 		})
 		return
 	}
+
 	now := time.Now()
 	updates := make(map[string]interface{})
 	updates["password"] = hashedPassword
@@ -388,7 +389,7 @@ func UpdatePassword(c *gin.Context) {
 
 // @Summary		修改用户名
 // @Description	修改用户名
-// @Tags			profile-update
+// @Tags			profile
 // @Accept			json
 // @Produce		json
 // @Param			request	body		dto.UpdateUsernameRequest	true	"修改用户名请求"
@@ -496,7 +497,7 @@ func UpdateUsername(c *gin.Context) {
 
 // @Summary		修改用户头像
 // @Description	修改用户头像
-// @Tags			profile-update
+// @Tags			profile
 // @Accept			multipart/form-data
 // @Produce		json
 // @Param			new_head_image	formData	file			true	"新头像"
@@ -593,6 +594,7 @@ func UpdateHeadImage(c *gin.Context) {
 		})
 		return
 	}
+
 	now := time.Now()
 	updates := make(map[string]interface{})
 	updates["head_image_path"] = savePath
@@ -638,7 +640,7 @@ func UpdateHeadImage(c *gin.Context) {
 // @Description	以及页码不输入或不合规范自动为第一页，每页多少不输入默认20，最多100
 // @Description	如果查询结果不存在则返回切片为空
 // @Description	用了id查询的话就一定只是一个确定的，而不是模糊搜索，其他参数就没用了（分页也是）
-// @Tags			admin-get
+// @Tags			admin-user
 // @Produce		json
 // @Param			user_id		query		int										false	"用户id"
 // @Param			username	query		string									false	"用户名"
@@ -713,7 +715,7 @@ func GetUsers(c *gin.Context) {
 
 // @Summary		管理员删除用户
 // @Description	管理员删除用户。ID=1(初始化管理员)不可删除；其他管理员仅可删除普通用户
-// @Tags			admin-operation
+// @Tags			admin-user
 // @Accept			json
 // @Produce		json
 // @Param			request	body		dto.AdminDeleteUserRequest	true	"删除用户请求"
@@ -824,7 +826,7 @@ func DeleteUserByAdmin(c *gin.Context) {
 
 // @Summary		管理员修改用户权限组
 // @Description	ID=1(初始化管理员)权限组不可修改；仅ID=1可修改其他用户权限组
-// @Tags			admin-update
+// @Tags			admin-user
 // @Accept			json
 // @Produce		json
 // @Param			request	body		dto.AdminUpdateUserGroupRequest	true	"修改权限组请求"
@@ -931,11 +933,11 @@ func UpdateUserGroupByAdmin(c *gin.Context) {
 // @Summary		管理员按类型查询基础资源
 // @Description	通过query参数type查询skills/achievements/items/cards；支持分页与可选id精确查询
 // @Description	type可选值：achievements、skills、items、cards
-// @Description	type=achievements 时，data.list 为 []models.Achievement
-// @Description	type=skills 时，data.list 为 []models.Skill
-// @Description	type=items 时，data.list 为 []models.Item
-// @Description	type=cards 时，data.list 为 []models.Card
-// @Tags			admin-get
+// @Description	type=achievements 时，data.list 为 []dto.AdminAchievementData
+// @Description	type=skills 时，data.list 为 []dto.AdminSkillData
+// @Description	type=items 时，data.list 为 []dto.AdminItemData
+// @Description	type=cards 时，data.list 为 []dto.AdminCardData
+// @Tags			admin-resource
 // @Produce		json
 // @Param			type		query		string									true	"资源类型(achievements/skills/items/cards)"
 // @Param			id			query		int										false	"资源ID，传入后优先精确查询"
@@ -943,10 +945,7 @@ func UpdateUserGroupByAdmin(c *gin.Context) {
 // @Param			skill_group	query		string									false	"技能组模糊搜索(type=skills有效)"
 // @Param			page		query		int										false	"页码，默认1"
 // @Param			page_size	query		int										false	"每页多少，默认20，最大100"
-// @Success		200			{object}	dto.Response{data=dto.PaginatedData}	"type=achievements 查询成功"
-// @Success		200			{object}	dto.Response{data=dto.PaginatedData}	"type=skills 查询成功"
-// @Success		200			{object}	dto.Response{data=dto.PaginatedData}	"type=items 查询成功"
-// @Success		200			{object}	dto.Response{data=dto.PaginatedData}	"type=cards 查询成功"
+// @Success		200			{object}	dto.Response{data=dto.PaginatedData}	"查询成功(data.list类型由type决定)"
 // @Failure		400			{object}	dto.Response							"请求参数错误"
 // @Failure		401			{object}	dto.Response							"登录状态异常"
 // @Failure		500			{object}	dto.Response							"数据库查询失败"
@@ -993,19 +992,20 @@ func GetResourcesByTypeForAdmin(c *gin.Context) {
 // @Description	type=skills 请求体：dto.AdminCreateSkillRequest
 // @Description	type=items 请求体：dto.AdminCreateItemRequest
 // @Description	type=cards 请求体：dto.AdminCreateCardRequest
-// @Description	type=achievements 时，data 为 models.Achievement
-// @Description	type=skills 时，data 为 models.Skill
-// @Description	type=items 时，data 为 models.Item
-// @Description	type=cards 时，data 为 models.Card
-// @Tags			admin-operation
+// @Description	请求体示例(type=achievements): {"name":"首胜","description":"首次获胜成就"}
+// @Description	请求体示例(type=skills): {"name":"冲刺","description":"短时间提速","skill_group":"move","prq_skill_id":0}
+// @Description	请求体示例(type=items): {"name":"急救包","description":"恢复生命值"}
+// @Description	请求体示例(type=cards): {"name":"护盾卡","description":"短时间免疫伤害"}
+// @Description	type=achievements 时，data 为 dto.AdminAchievementData
+// @Description	type=skills 时，data 为 dto.AdminSkillData
+// @Description	type=items 时，data 为 dto.AdminItemData
+// @Description	type=cards 时，data 为 dto.AdminCardData
+// @Tags			admin-resource
 // @Accept			json
 // @Produce		json
 // @Param			type	query		string									true	"资源类型(achievements/skills/items/cards)"
 // @Param			request	body		dto.AdminCreateSkillRequest				true	"创建请求体(示例以skills为准)"
-// @Success		200		{object}	dto.Response{data=models.Achievement}	"type=achievements 创建成功"
-// @Success		200		{object}	dto.Response{data=models.Skill}			"type=skills 创建成功"
-// @Success		200		{object}	dto.Response{data=models.Item}			"type=items 创建成功"
-// @Success		200		{object}	dto.Response{data=models.Card}			"type=cards 创建成功"
+// @Success		200		{object}	dto.Response							"创建成功(data类型由type决定)"
 // @Failure		400		{object}	dto.Response							"请求参数错误"
 // @Failure		401		{object}	dto.Response							"登录状态异常"
 // @Failure		409		{object}	dto.Response							"名称冲突"
@@ -1055,19 +1055,20 @@ func CreateResourceByTypeForAdmin(c *gin.Context) {
 // @Description	type=skills 请求体：dto.AdminUpdateSkillRequest
 // @Description	type=items 请求体：dto.AdminUpdateItemRequest
 // @Description	type=cards 请求体：dto.AdminUpdateCardRequest
-// @Description	type=achievements 时，data 为 models.Achievement
-// @Description	type=skills 时，data 为 models.Skill
-// @Description	type=items 时，data 为 models.Item
-// @Description	type=cards 时，data 为 models.Card
-// @Tags			admin-update
+// @Description	请求体示例(type=achievements): {"id":1,"name":"首胜(改)","description":"首次获胜成就(改)"}
+// @Description	请求体示例(type=skills): {"id":1,"name":"冲刺(改)","description":"短时间提速(改)","skill_group":"move","prq_skill_id":0}
+// @Description	请求体示例(type=items): {"id":1,"name":"急救包(改)","description":"恢复生命值(改)"}
+// @Description	请求体示例(type=cards): {"id":1,"name":"护盾卡(改)","description":"短时间免疫伤害(改)"}
+// @Description	type=achievements 时，data 为 dto.AdminAchievementData
+// @Description	type=skills 时，data 为 dto.AdminSkillData
+// @Description	type=items 时，data 为 dto.AdminItemData
+// @Description	type=cards 时，data 为 dto.AdminCardData
+// @Tags			admin-resource
 // @Accept			json
 // @Produce		json
 // @Param			type	query		string									true	"资源类型(achievements/skills/items/cards)"
 // @Param			request	body		dto.AdminUpdateSkillRequest				true	"更新请求体(示例以skills为准)"
-// @Success		200		{object}	dto.Response{data=models.Achievement}	"type=achievements 更新成功"
-// @Success		200		{object}	dto.Response{data=models.Skill}			"type=skills 更新成功"
-// @Success		200		{object}	dto.Response{data=models.Item}			"type=items 更新成功"
-// @Success		200		{object}	dto.Response{data=models.Card}			"type=cards 更新成功"
+// @Success		200		{object}	dto.Response							"更新成功(data类型由type决定)"
 // @Failure		400		{object}	dto.Response							"请求参数错误"
 // @Failure		401		{object}	dto.Response							"登录状态异常"
 // @Failure		404		{object}	dto.Response							"目标资源不存在"
@@ -1114,7 +1115,7 @@ func UpdateResourceByTypeForAdmin(c *gin.Context) {
 
 // @Summary		管理员按类型删除基础资源
 // @Description	通过query参数type删除skills/achievements/items/cards中的一种资源
-// @Tags			admin-operation
+// @Tags			admin-resource
 // @Accept			json
 // @Produce		json
 // @Param			type	query		string									true	"资源类型(achievements/skills/items/cards)"
@@ -1157,7 +1158,7 @@ func DeleteResourceByTypeForAdmin(c *gin.Context) {
 }
 
 // @Summary	获取用户自身基础信息
-// @Tags		profile-get
+// @Tags		profile
 // @Produce	json
 // @Success	200	{object}	dto.Response{data=dto.CommonUserData}	"查询成功"
 // @Failure	401	{object}	dto.Response							"登录状态异常"
@@ -1173,8 +1174,8 @@ func GetSelfProfile(c *gin.Context) {
 		})
 		return
 	}
-	var user models.User
 
+	var user models.User
 	err = config.DB.First(&user, userId).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -1211,15 +1212,12 @@ func GetSelfProfile(c *gin.Context) {
 // @Description	type=skills 时，data.list 为 []dto.UserSkillRelationData
 // @Description	type=items 时，data.list 为 []dto.UserItemRelationData
 // @Description	type=cards 时，data.list 为 []dto.UserCardRelationData
-// @Tags			profile-get
+// @Tags			profile
 // @Produce		json
 // @Param			type		query		string													true	"关联类型(achievements/skills/items/cards)"
 // @Param			page		query		int														false	"页码，默认1"
 // @Param			page_size	query		int														false	"每页多少，默认20，最大100"
-// @Success		200			{object}	dto.Response{data=dto.UserAchievementRelationPageData}	"type=achievements 查询成功"
-// @Success		200			{object}	dto.Response{data=dto.UserSkillRelationPageData}		"type=skills 查询成功"
-// @Success		200			{object}	dto.Response{data=dto.UserItemRelationPageData}			"type=items 查询成功"
-// @Success		200			{object}	dto.Response{data=dto.UserCardRelationPageData}			"type=cards 查询成功"
+// @Success		200			{object}	dto.Response{data=dto.PaginatedData}			"查询成功(data.list类型由type决定)"
 // @Failure		400			{object}	dto.Response											"请求参数错误"
 // @Failure		401			{object}	dto.Response											"登录状态异常"
 // @Failure		500			{object}	dto.Response											"数据库查询失败"

@@ -85,12 +85,12 @@ func adminQueryAchievements(c *gin.Context, pagination models.Pagination) (inter
 		var record models.Achievement
 		err = config.DB.First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []models.Achievement{}, 0, nil
+			return []dto.AdminAchievementData{}, 0, nil
 		}
 		if err != nil {
 			return nil, 0, err
 		}
-		return []models.Achievement{record}, 1, nil
+		return []dto.AdminAchievementData{dto.BuildAdminAchievementData(record)}, 1, nil
 	}
 
 	db := config.DB.Model(&models.Achievement{})
@@ -105,7 +105,7 @@ func adminQueryAchievements(c *gin.Context, pagination models.Pagination) (inter
 	if err = db.Limit(pagination.Limit).Offset(pagination.Offset).Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
-	return list, total, nil
+	return dto.BuildAdminAchievementList(list), total, nil
 }
 
 func adminQuerySkills(c *gin.Context, pagination models.Pagination) (interface{}, int64, error) {
@@ -120,12 +120,12 @@ func adminQuerySkills(c *gin.Context, pagination models.Pagination) (interface{}
 		var record models.Skill
 		err = config.DB.First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []models.Skill{}, 0, nil
+			return []dto.AdminSkillData{}, 0, nil
 		}
 		if err != nil {
 			return nil, 0, err
 		}
-		return []models.Skill{record}, 1, nil
+		return []dto.AdminSkillData{dto.BuildAdminSkillData(record)}, 1, nil
 	}
 
 	db := config.DB.Model(&models.Skill{})
@@ -143,7 +143,7 @@ func adminQuerySkills(c *gin.Context, pagination models.Pagination) (interface{}
 	if err = db.Limit(pagination.Limit).Offset(pagination.Offset).Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
-	return list, total, nil
+	return dto.BuildAdminSkillList(list), total, nil
 }
 
 func adminQueryItems(c *gin.Context, pagination models.Pagination) (interface{}, int64, error) {
@@ -157,12 +157,12 @@ func adminQueryItems(c *gin.Context, pagination models.Pagination) (interface{},
 		var record models.Item
 		err = config.DB.First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []models.Item{}, 0, nil
+			return []dto.AdminItemData{}, 0, nil
 		}
 		if err != nil {
 			return nil, 0, err
 		}
-		return []models.Item{record}, 1, nil
+		return []dto.AdminItemData{dto.BuildAdminItemData(record)}, 1, nil
 	}
 
 	db := config.DB.Model(&models.Item{})
@@ -177,7 +177,7 @@ func adminQueryItems(c *gin.Context, pagination models.Pagination) (interface{},
 	if err = db.Limit(pagination.Limit).Offset(pagination.Offset).Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
-	return list, total, nil
+	return dto.BuildAdminItemList(list), total, nil
 }
 
 func adminQueryCards(c *gin.Context, pagination models.Pagination) (interface{}, int64, error) {
@@ -191,12 +191,12 @@ func adminQueryCards(c *gin.Context, pagination models.Pagination) (interface{},
 		var record models.Card
 		err = config.DB.First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []models.Card{}, 0, nil
+			return []dto.AdminCardData{}, 0, nil
 		}
 		if err != nil {
 			return nil, 0, err
 		}
-		return []models.Card{record}, 1, nil
+		return []dto.AdminCardData{dto.BuildAdminCardData(record)}, 1, nil
 	}
 
 	db := config.DB.Model(&models.Card{})
@@ -211,7 +211,7 @@ func adminQueryCards(c *gin.Context, pagination models.Pagination) (interface{},
 	if err = db.Limit(pagination.Limit).Offset(pagination.Offset).Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
-	return list, total, nil
+	return dto.BuildAdminCardList(list), total, nil
 }
 
 func adminCreateAchievement(c *gin.Context) (interface{}, error) {
@@ -226,7 +226,7 @@ func adminCreateAchievement(c *gin.Context) (interface{}, error) {
 	if err := config.DB.Create(&record).Error; err != nil {
 		return nil, err
 	}
-	return record, nil
+	return dto.BuildAdminAchievementData(record), nil
 }
 
 func adminCreateSkill(c *gin.Context) (interface{}, error) {
@@ -241,7 +241,7 @@ func adminCreateSkill(c *gin.Context) (interface{}, error) {
 	if err := config.DB.Create(&record).Error; err != nil {
 		return nil, err
 	}
-	return record, nil
+	return dto.BuildAdminSkillData(record), nil
 }
 
 func adminCreateItem(c *gin.Context) (interface{}, error) {
@@ -256,7 +256,7 @@ func adminCreateItem(c *gin.Context) (interface{}, error) {
 	if err := config.DB.Create(&record).Error; err != nil {
 		return nil, err
 	}
-	return record, nil
+	return dto.BuildAdminItemData(record), nil
 }
 
 func adminCreateCard(c *gin.Context) (interface{}, error) {
@@ -271,7 +271,7 @@ func adminCreateCard(c *gin.Context) (interface{}, error) {
 	if err := config.DB.Create(&record).Error; err != nil {
 		return nil, err
 	}
-	return record, nil
+	return dto.BuildAdminCardData(record), nil
 }
 
 func adminUpdateAchievement(c *gin.Context) (interface{}, error) {
@@ -375,7 +375,7 @@ func doUpdateAchievement(id uint, updates map[string]interface{}) (interface{}, 
 	if err := config.DB.First(&record, id).Error; err != nil {
 		return nil, err
 	}
-	return record, nil
+	return dto.BuildAdminAchievementData(record), nil
 }
 
 func doUpdateSkill(id uint, updates map[string]interface{}) (interface{}, error) {
@@ -389,7 +389,7 @@ func doUpdateSkill(id uint, updates map[string]interface{}) (interface{}, error)
 	if err := config.DB.First(&record, id).Error; err != nil {
 		return nil, err
 	}
-	return record, nil
+	return dto.BuildAdminSkillData(record), nil
 }
 
 func doUpdateItem(id uint, updates map[string]interface{}) (interface{}, error) {
@@ -403,7 +403,7 @@ func doUpdateItem(id uint, updates map[string]interface{}) (interface{}, error) 
 	if err := config.DB.First(&record, id).Error; err != nil {
 		return nil, err
 	}
-	return record, nil
+	return dto.BuildAdminItemData(record), nil
 }
 
 func doUpdateCard(id uint, updates map[string]interface{}) (interface{}, error) {
@@ -417,7 +417,7 @@ func doUpdateCard(id uint, updates map[string]interface{}) (interface{}, error) 
 	if err := config.DB.First(&record, id).Error; err != nil {
 		return nil, err
 	}
-	return record, nil
+	return dto.BuildAdminCardData(record), nil
 }
 
 func adminDeleteAchievement(id uint) error {

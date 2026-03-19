@@ -1,14 +1,5 @@
 basePath: /api
 definitions:
-  dto.AchievementBrief:
-    properties:
-      achievement_id:
-        type: integer
-      achievement_name:
-        type: string
-      description:
-        type: string
-    type: object
   dto.AdminCreateSkillRequest:
     properties:
       description:
@@ -82,15 +73,6 @@ definitions:
         - $ref: '#/definitions/dto.CommonUserData'
         description: 用户
     type: object
-  dto.CardBrief:
-    properties:
-      card_id:
-        type: integer
-      card_name:
-        type: string
-      description:
-        type: string
-    type: object
   dto.CommonUserData:
     properties:
       group:
@@ -110,15 +92,6 @@ definitions:
         type: integer
       username:
         description: 用户名
-        type: string
-    type: object
-  dto.ItemBrief:
-    properties:
-      description:
-        type: string
-      item_id:
-        type: integer
-      item_name:
         type: string
     type: object
   dto.LoginRequest:
@@ -173,19 +146,6 @@ definitions:
         description: 返回的消息
         type: string
     type: object
-  dto.SkillBrief:
-    properties:
-      description:
-        type: string
-      prq_skill_id:
-        type: integer
-      skill_group:
-        type: string
-      skill_id:
-        type: integer
-      skill_name:
-        type: string
-    type: object
   dto.UpdatePasswordRequest:
     description: 修改密码
     properties:
@@ -208,185 +168,6 @@ definitions:
         type: string
     required:
     - new_username
-    type: object
-  dto.UserAchievementRelationData:
-    properties:
-      achievement:
-        $ref: '#/definitions/dto.AchievementBrief'
-      claimed:
-        type: boolean
-      claimed_at:
-        type: string
-      complete_at:
-        type: string
-      created_at:
-        type: string
-      is_complete:
-        type: boolean
-      updated_at:
-        type: string
-    type: object
-  dto.UserAchievementRelationPageData:
-    properties:
-      list:
-        items:
-          $ref: '#/definitions/dto.UserAchievementRelationData'
-        type: array
-      page:
-        type: integer
-      page_size:
-        type: integer
-      total:
-        type: integer
-    type: object
-  dto.UserCardRelationData:
-    properties:
-      card:
-        $ref: '#/definitions/dto.CardBrief'
-      claimed:
-        type: boolean
-      claimed_at:
-        type: string
-      complete_at:
-        type: string
-      created_at:
-        type: string
-      is_complete:
-        type: boolean
-      updated_at:
-        type: string
-    type: object
-  dto.UserCardRelationPageData:
-    properties:
-      list:
-        items:
-          $ref: '#/definitions/dto.UserCardRelationData'
-        type: array
-      page:
-        type: integer
-      page_size:
-        type: integer
-      total:
-        type: integer
-    type: object
-  dto.UserItemRelationData:
-    properties:
-      claimed:
-        type: boolean
-      claimed_at:
-        type: string
-      complete_at:
-        type: string
-      created_at:
-        type: string
-      is_complete:
-        type: boolean
-      item:
-        $ref: '#/definitions/dto.ItemBrief'
-      updated_at:
-        type: string
-    type: object
-  dto.UserItemRelationPageData:
-    properties:
-      list:
-        items:
-          $ref: '#/definitions/dto.UserItemRelationData'
-        type: array
-      page:
-        type: integer
-      page_size:
-        type: integer
-      total:
-        type: integer
-    type: object
-  dto.UserSkillRelationData:
-    properties:
-      claimed:
-        type: boolean
-      claimed_at:
-        type: string
-      complete_at:
-        type: string
-      created_at:
-        type: string
-      is_complete:
-        type: boolean
-      skill:
-        $ref: '#/definitions/dto.SkillBrief'
-      skill_grade:
-        type: integer
-      updated_at:
-        type: string
-    type: object
-  dto.UserSkillRelationPageData:
-    properties:
-      list:
-        items:
-          $ref: '#/definitions/dto.UserSkillRelationData'
-        type: array
-      page:
-        type: integer
-      page_size:
-        type: integer
-      total:
-        type: integer
-    type: object
-  models.Achievement:
-    properties:
-      achievement_id:
-        type: integer
-      achievement_name:
-        type: string
-      created_at:
-        type: string
-      description:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  models.Card:
-    properties:
-      created_at:
-        type: string
-      description:
-        type: string
-      skill_id:
-        type: integer
-      skill_name:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  models.Item:
-    properties:
-      created_at:
-        type: string
-      description:
-        type: string
-      skill_id:
-        type: integer
-      skill_name:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  models.Skill:
-    properties:
-      created_at:
-        type: string
-      description:
-        type: string
-      prq_skill_id:
-        type: integer
-      skill_group:
-        description: Front End Products Design Operations Apple Android
-        type: string
-      skill_id:
-        type: integer
-      skill_name:
-        type: string
-      updated_at:
-        type: string
     type: object
 host: localhost:8080
 info:
@@ -451,16 +232,16 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 获取用户列表
       tags:
-      - admin-get
+      - admin-user
   /api/admin/get/resources:
     get:
       description: |-
         通过query参数type查询skills/achievements/items/cards；支持分页与可选id精确查询
         type可选值：achievements、skills、items、cards
-        type=achievements 时，data.list 为 []models.Achievement
-        type=skills 时，data.list 为 []models.Skill
-        type=items 时，data.list 为 []models.Item
-        type=cards 时，data.list 为 []models.Card
+        type=achievements 时，data.list 为 []dto.AdminAchievementData
+        type=skills 时，data.list 为 []dto.AdminSkillData
+        type=items 时，data.list 为 []dto.AdminItemData
+        type=cards 时，data.list 为 []dto.AdminCardData
       parameters:
       - description: 资源类型(achievements/skills/items/cards)
         in: query
@@ -491,7 +272,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: type=cards 查询成功
+          description: 查询成功(data.list类型由type决定)
           schema:
             allOf:
             - $ref: '#/definitions/dto.Response'
@@ -513,7 +294,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 管理员按类型查询基础资源
       tags:
-      - admin-get
+      - admin-resource
   /api/admin/operation/deleteuser:
     delete:
       consumes:
@@ -555,7 +336,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 管理员删除用户
       tags:
-      - admin-operation
+      - admin-user
   /api/admin/operation/resources:
     delete:
       consumes:
@@ -598,7 +379,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 管理员按类型删除基础资源
       tags:
-      - admin-operation
+      - admin-resource
     post:
       consumes:
       - application/json
@@ -608,10 +389,14 @@ paths:
         type=skills 请求体：dto.AdminCreateSkillRequest
         type=items 请求体：dto.AdminCreateItemRequest
         type=cards 请求体：dto.AdminCreateCardRequest
-        type=achievements 时，data 为 models.Achievement
-        type=skills 时，data 为 models.Skill
-        type=items 时，data 为 models.Item
-        type=cards 时，data 为 models.Card
+        请求体示例(type=achievements): {"name":"首胜","description":"首次获胜成就"}
+        请求体示例(type=skills): {"name":"冲刺","description":"短时间提速","skill_group":"move","prq_skill_id":0}
+        请求体示例(type=items): {"name":"急救包","description":"恢复生命值"}
+        请求体示例(type=cards): {"name":"护盾卡","description":"短时间免疫伤害"}
+        type=achievements 时，data 为 dto.AdminAchievementData
+        type=skills 时，data 为 dto.AdminSkillData
+        type=items 时，data 为 dto.AdminItemData
+        type=cards 时，data 为 dto.AdminCardData
       parameters:
       - description: 资源类型(achievements/skills/items/cards)
         in: query
@@ -628,14 +413,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: type=cards 创建成功
+          description: 创建成功(data类型由type决定)
           schema:
-            allOf:
-            - $ref: '#/definitions/dto.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.Card'
-              type: object
+            $ref: '#/definitions/dto.Response'
         "400":
           description: 请求参数错误
           schema:
@@ -654,7 +434,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 管理员按类型创建基础资源
       tags:
-      - admin-operation
+      - admin-resource
   /api/admin/update/resources:
     put:
       consumes:
@@ -665,10 +445,14 @@ paths:
         type=skills 请求体：dto.AdminUpdateSkillRequest
         type=items 请求体：dto.AdminUpdateItemRequest
         type=cards 请求体：dto.AdminUpdateCardRequest
-        type=achievements 时，data 为 models.Achievement
-        type=skills 时，data 为 models.Skill
-        type=items 时，data 为 models.Item
-        type=cards 时，data 为 models.Card
+        请求体示例(type=achievements): {"id":1,"name":"首胜(改)","description":"首次获胜成就(改)"}
+        请求体示例(type=skills): {"id":1,"name":"冲刺(改)","description":"短时间提速(改)","skill_group":"move","prq_skill_id":0}
+        请求体示例(type=items): {"id":1,"name":"急救包(改)","description":"恢复生命值(改)"}
+        请求体示例(type=cards): {"id":1,"name":"护盾卡(改)","description":"短时间免疫伤害(改)"}
+        type=achievements 时，data 为 dto.AdminAchievementData
+        type=skills 时，data 为 dto.AdminSkillData
+        type=items 时，data 为 dto.AdminItemData
+        type=cards 时，data 为 dto.AdminCardData
       parameters:
       - description: 资源类型(achievements/skills/items/cards)
         in: query
@@ -685,14 +469,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: type=cards 更新成功
+          description: 更新成功(data类型由type决定)
           schema:
-            allOf:
-            - $ref: '#/definitions/dto.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.Card'
-              type: object
+            $ref: '#/definitions/dto.Response'
         "400":
           description: 请求参数错误
           schema:
@@ -715,7 +494,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 管理员按类型更新基础资源
       tags:
-      - admin-update
+      - admin-resource
   /api/admin/update/usergroup:
     put:
       consumes:
@@ -757,7 +536,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 管理员修改用户权限组
       tags:
-      - admin-update
+      - admin-user
   /api/auth/login:
     post:
       consumes:
@@ -862,13 +641,13 @@ paths:
       - application/json
       responses:
         "200":
-          description: type=cards 查询成功
+          description: 查询成功(data.list类型由type决定)
           schema:
             allOf:
             - $ref: '#/definitions/dto.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/dto.UserCardRelationPageData'
+                  $ref: '#/definitions/dto.PaginatedData'
               type: object
         "400":
           description: 请求参数错误
@@ -884,7 +663,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 按类型获取用户关联数据
       tags:
-      - profile-get
+      - profile
   /api/profile/get/self:
     get:
       produces:
@@ -909,7 +688,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 获取用户自身基础信息
       tags:
-      - profile-get
+      - profile
   /api/profile/operation/logout:
     get:
       description: 用户登出（token版号增加一）
@@ -930,7 +709,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 用户登出（token版号增加一）
       tags:
-      - profile-operation
+      - profile
   /api/profile/update/headimage:
     put:
       consumes:
@@ -971,7 +750,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 修改用户头像
       tags:
-      - profile-update
+      - profile
   /api/profile/update/password:
     put:
       consumes:
@@ -1013,7 +792,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 修改用户密码
       tags:
-      - profile-update
+      - profile
   /api/profile/update/username:
     put:
       consumes:
@@ -1055,7 +834,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 修改用户名
       tags:
-      - profile-update
+      - profile
 securityDefinitions:
   BearerAuth:
     description: 输入你的Bearer Token，格式：Bearer {token}
