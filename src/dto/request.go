@@ -47,3 +47,57 @@ type AdminUpdateUserGroupRequest struct {
 	UserID   uint   `json:"user_id" binding:"required,gt=0"`
 	NewGroup string `json:"new_group" binding:"required,oneof=user admin"`
 }
+
+type AdminCreateAchievementRequest struct {
+	Name        string `json:"name" binding:"required,min=1,max=50"`
+	Description string `json:"description"`
+}
+
+type AdminCreateSkillRequest struct {
+	Name        string `json:"name" binding:"required,min=1,max=50"`
+	Description string `json:"description"`
+	SkillGroup  string `json:"skill_group"`
+	PrqSkillID  uint   `json:"prq_skill_id"`
+}
+
+type AdminCreateItemRequest struct {
+	Name        string `json:"name" binding:"required,min=1,max=50"`
+	Description string `json:"description"`
+}
+
+type AdminCreateCardRequest struct {
+	Name        string `json:"name" binding:"required,min=1,max=50"`
+	Description string `json:"description"`
+}
+
+type AdminUpdateAchievementRequest struct {
+	ID          uint    `json:"id" binding:"required,gt=0"`
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+}
+
+type AdminUpdateSkillRequest struct {
+	ID          uint    `json:"id" binding:"required,gt=0"`
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+	SkillGroup  *string `json:"skill_group"`
+	PrqSkillID  *uint   `json:"prq_skill_id"`
+}
+
+type AdminUpdateItemRequest struct {
+	ID          uint    `json:"id" binding:"required,gt=0"`
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+}
+
+type AdminUpdateCardRequest struct {
+	ID          uint    `json:"id" binding:"required,gt=0"`
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+}
+
+// @summary		管理员按类型删除基础资源请求
+// @description	用于skills/achievements/items/cards的删除（按ID）
+type AdminDeleteResourceByTypeRequest struct {
+	ID uint `json:"id" binding:"required,gt=0"`
+}

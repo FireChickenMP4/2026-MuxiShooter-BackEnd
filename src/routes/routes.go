@@ -57,11 +57,14 @@ func RegisterRoutes(r *gin.Engine) {
 				operationGroup := adminGroup.Group("/operation")
 				{
 					operationGroup.DELETE("/deleteuser", controller.DeleteUserByAdmin)
+					operationGroup.POST("/resources", controller.CreateResourceByTypeForAdmin)
+					operationGroup.DELETE("/resources", controller.DeleteResourceByTypeForAdmin)
 				}
 
 				updateGroup := adminGroup.Group("/update")
 				{
 					updateGroup.PUT("/usergroup", controller.UpdateUserGroupByAdmin)
+					updateGroup.PUT("/resources", controller.UpdateResourceByTypeForAdmin)
 				}
 
 				getGroup := adminGroup.Group("/get")
@@ -70,6 +73,7 @@ func RegisterRoutes(r *gin.Engine) {
 					paginatedGroup.Use(middleware.PaginationMiddleware())
 					{
 						paginatedGroup.GET("/getusers", controller.GetUsers)
+						paginatedGroup.GET("/resources", controller.GetResourcesByTypeForAdmin)
 					}
 				}
 			}
