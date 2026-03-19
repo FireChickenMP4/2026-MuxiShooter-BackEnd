@@ -67,12 +67,34 @@ jobs:
             set -euo pipefail
             cd ${{ secrets.SERVER_PATH }}
 
+            retry() {
+              max_attempts="$1"
+              delay_seconds="$2"
+              shift 2
+
+              attempt=1
+              while true; do
+                if "$@"; then
+                  return 0
+                fi
+
+                if [ "$attempt" -ge "$max_attempts" ]; then
+                  echo "Command failed after ${attempt} attempts: $*"
+                  return 1
+                fi
+
+                echo "Attempt ${attempt}/${max_attempts} failed, retrying in ${delay_seconds}s: $*"
+                attempt=$((attempt + 1))
+                sleep "$delay_seconds"
+              done
+            }
+
             if [ ! -f docker-compose.yml ]; then
               echo "docker-compose.yml not found in SERVER_PATH"
               exit 1
             fi
 
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            retry 5 5 sh -c 'echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin'
 
             NEW_TAG="${{ github.sha }}"
             PREV_TAG="$(docker compose ps -q app | xargs -r docker inspect --format '{{.Config.Image}}' 2>/dev/null | sed -n 's|.*:||p' | head -n1)"
@@ -87,7 +109,7 @@ jobs:
             echo "Deploying tag: $NEW_TAG"
 
             export IMAGE_TAG="$NEW_TAG"
-            docker compose pull app
+            retry 5 8 docker compose pull app
             docker compose up -d app
 
             HEALTHY="false"
@@ -116,7 +138,7 @@ jobs:
             if [ "$HEALTHY" != "true" ]; then
               echo "Deploy failed, rolling back to tag: $PREV_TAG"
               export IMAGE_TAG="$PREV_TAG"
-              docker compose pull app || true
+              retry 3 8 docker compose pull app || true
               docker compose up -d app
               exit 1
             fi
