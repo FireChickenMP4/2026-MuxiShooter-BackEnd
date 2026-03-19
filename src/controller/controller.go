@@ -579,6 +579,7 @@ func UpdateHeadImage(c *gin.Context) {
 	}
 
 	log.Printf("用户:%s(id:%d)上传头像,Size:%d", user.Username, user.ID, req.NewHeadImage.Size)
+	oldHeadImagePath := user.HeadImagePath
 	savePath, err := utils.SaveImages(c, req.NewHeadImage, config.PrefixHeadImg)
 	if err != nil {
 		tx.Rollback()
@@ -594,6 +595,9 @@ func UpdateHeadImage(c *gin.Context) {
 	updates["head_image_updated_at"] = &now
 	if err = tx.Model(&user).Updates(updates).Error; err != nil {
 		tx.Rollback()
+		if removeErr := utils.RemoveFile(savePath); removeErr != nil {
+			log.Printf("回滚时删除新头像失败(user_id:%d,path:%s): %v", user.ID, savePath, removeErr)
+		}
 		c.JSON(http.StatusInternalServerError, dto.Response{
 			Code:    http.StatusInternalServerError, //500
 			Message: "修改头像失败：" + err.Error(),
@@ -603,11 +607,20 @@ func UpdateHeadImage(c *gin.Context) {
 
 	if err = tx.Commit().Error; err != nil {
 		tx.Rollback()
+		if removeErr := utils.RemoveFile(savePath); removeErr != nil {
+			log.Printf("提交失败时删除新头像失败(user_id:%d,path:%s): %v", user.ID, savePath, removeErr)
+		}
 		c.JSON(http.StatusInternalServerError, dto.Response{
 			Code:    http.StatusInternalServerError, //500
 			Message: "提交Update请求失败：" + err.Error(),
 		})
 		return
+	}
+
+	if oldHeadImagePath != "" && oldHeadImagePath != savePath && oldHeadImagePath != config.DefaultHeadImagePath {
+		if removeErr := utils.RemoveFile(oldHeadImagePath); removeErr != nil {
+			log.Printf("删除旧头像失败(user_id:%d,path:%s): %v", user.ID, oldHeadImagePath, removeErr)
+		}
 	}
 
 	c.JSON(http.StatusOK, dto.Response{
@@ -745,15 +758,22 @@ func GetSelfProfile(c *gin.Context) {
 
 // @Summary		按类型获取用户关联数据
 // @Description	通过query参数type选择查询achievements/skills/items/cards中的一种
+// @Description	type=achievements 时，data.list 为 []dto.UserAchievementRelationData
+// @Description	type=skills 时，data.list 为 []dto.UserSkillRelationData
+// @Description	type=items 时，data.list 为 []dto.UserItemRelationData
+// @Description	type=cards 时，data.list 为 []dto.UserCardRelationData
 // @Tags			profile-get
 // @Produce		json
-// @Param			type		query		string									true	"关联类型(achievements/skills/items/cards)"
-// @Param			page		query		int										false	"页码，默认1"
-// @Param			page_size	query		int										false	"每页多少，默认20，最大100"
-// @Success		200			{object}	dto.Response{data=dto.PaginatedData}	"查询成功"
-// @Failure		400			{object}	dto.Response							"请求参数错误"
-// @Failure		401			{object}	dto.Response							"登录状态异常"
-// @Failure		500			{object}	dto.Response							"数据库查询失败"
+// @Param			type		query		string													true	"关联类型(achievements/skills/items/cards)"
+// @Param			page		query		int														false	"页码，默认1"
+// @Param			page_size	query		int														false	"每页多少，默认20，最大100"
+// @Success		200			{object}	dto.Response{data=dto.UserAchievementRelationPageData}	"type=achievements 查询成功"
+// @Success		200			{object}	dto.Response{data=dto.UserSkillRelationPageData}		"type=skills 查询成功"
+// @Success		200			{object}	dto.Response{data=dto.UserItemRelationPageData}			"type=items 查询成功"
+// @Success		200			{object}	dto.Response{data=dto.UserCardRelationPageData}			"type=cards 查询成功"
+// @Failure		400			{object}	dto.Response											"请求参数错误"
+// @Failure		401			{object}	dto.Response											"登录状态异常"
+// @Failure		500			{object}	dto.Response											"数据库查询失败"
 // @Router			/api/profile/get/relations [get]
 func GetSelfRelationsByType(c *gin.Context) {
 	relationTypeStr := c.Query("type")
@@ -764,7 +784,7 @@ func GetSelfRelationsByType(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	relationType, err := ParseUserRelationType(relationTypeStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.Response{

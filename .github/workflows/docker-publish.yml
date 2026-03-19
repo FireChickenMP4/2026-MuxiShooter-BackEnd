@@ -1,5 +1,8 @@
 name: Publish Backend Image
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches:
@@ -8,8 +11,8 @@ on:
       - Dockerfile
       - docker-compose.yml
       - src/**
-      - config/**
-      - Caddy/**
+      # - config/**
+      # - Caddy/**
       - src/go.mod
       - src/go.sum
       - .github/workflows/docker-publish.yml

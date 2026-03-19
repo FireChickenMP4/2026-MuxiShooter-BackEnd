@@ -229,7 +229,7 @@ const docTemplate = `{
         },
         "/api/profile/get/relations": {
             "get": {
-                "description": "通过query参数type选择查询achievements/skills/items/cards中的一种",
+                "description": "通过query参数type选择查询achievements/skills/items/cards中的一种\ntype=achievements 时，data.list 为 []dto.UserAchievementRelationData\ntype=skills 时，data.list 为 []dto.UserSkillRelationData\ntype=items 时，data.list 为 []dto.UserItemRelationData\ntype=cards 时，data.list 为 []dto.UserCardRelationData",
                 "produces": [
                     "application/json"
                 ],
@@ -260,7 +260,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "查询成功",
+                        "description": "type=cards 查询成功",
                         "schema": {
                             "allOf": [
                                 {
@@ -270,7 +270,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.PaginatedData"
+                                            "$ref": "#/definitions/dto.UserCardRelationPageData"
                                         }
                                     }
                                 }
@@ -565,6 +565,20 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.AchievementBrief": {
+            "type": "object",
+            "properties": {
+                "achievement_id": {
+                    "type": "integer"
+                },
+                "achievement_name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.AuthData": {
             "type": "object",
             "properties": {
@@ -583,6 +597,20 @@ const docTemplate = `{
                             "$ref": "#/definitions/dto.CommonUserData"
                         }
                     ]
+                }
+            }
+        },
+        "dto.CardBrief": {
+            "type": "object",
+            "properties": {
+                "card_id": {
+                    "type": "integer"
+                },
+                "card_name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
                 }
             }
         },
@@ -611,6 +639,20 @@ const docTemplate = `{
                 },
                 "username": {
                     "description": "用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ItemBrief": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "item_id": {
+                    "type": "integer"
+                },
+                "item_name": {
                     "type": "string"
                 }
             }
@@ -688,6 +730,26 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.SkillBrief": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "prq_skill_id": {
+                    "type": "integer"
+                },
+                "skill_group": {
+                    "type": "string"
+                },
+                "skill_id": {
+                    "type": "integer"
+                },
+                "skill_name": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.UpdatePasswordRequest": {
             "description": "修改密码",
             "type": "object",
@@ -717,6 +779,193 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 20,
                     "minLength": 3
+                }
+            }
+        },
+        "dto.UserAchievementRelationData": {
+            "type": "object",
+            "properties": {
+                "achievement": {
+                    "$ref": "#/definitions/dto.AchievementBrief"
+                },
+                "claimed": {
+                    "type": "boolean"
+                },
+                "claimed_at": {
+                    "type": "string"
+                },
+                "complete_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "is_complete": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserAchievementRelationPageData": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UserAchievementRelationData"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UserCardRelationData": {
+            "type": "object",
+            "properties": {
+                "card": {
+                    "$ref": "#/definitions/dto.CardBrief"
+                },
+                "claimed": {
+                    "type": "boolean"
+                },
+                "claimed_at": {
+                    "type": "string"
+                },
+                "complete_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "is_complete": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserCardRelationPageData": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UserCardRelationData"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UserItemRelationData": {
+            "type": "object",
+            "properties": {
+                "claimed": {
+                    "type": "boolean"
+                },
+                "claimed_at": {
+                    "type": "string"
+                },
+                "complete_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "is_complete": {
+                    "type": "boolean"
+                },
+                "item": {
+                    "$ref": "#/definitions/dto.ItemBrief"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserItemRelationPageData": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UserItemRelationData"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UserSkillRelationData": {
+            "type": "object",
+            "properties": {
+                "claimed": {
+                    "type": "boolean"
+                },
+                "claimed_at": {
+                    "type": "string"
+                },
+                "complete_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "is_complete": {
+                    "type": "boolean"
+                },
+                "skill": {
+                    "$ref": "#/definitions/dto.SkillBrief"
+                },
+                "skill_grade": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserSkillRelationPageData": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UserSkillRelationData"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         }

@@ -2,6 +2,7 @@ package controller
 
 import (
 	config "MuXi/2026-MuxiShooter-Backend/config"
+	"MuXi/2026-MuxiShooter-Backend/dto"
 	"MuXi/2026-MuxiShooter-Backend/middleware"
 	models "MuXi/2026-MuxiShooter-Backend/models"
 	"errors"
@@ -65,7 +66,12 @@ func queryUserAchievements(userID uint, pagination models.Pagination) (interface
 		Where("user_id = ?", userID).
 		Preload("Achievement")
 
-	return executePaginatedQuery(baseQuery, pagination, &records)
+	total, err := executePaginatedQuery(baseQuery, pagination, &records)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return dto.BuildUserAchievementRelationList(records), total, nil
 }
 
 func queryUserSkills(userID uint, pagination models.Pagination) (interface{}, int64, error) {
@@ -74,7 +80,12 @@ func queryUserSkills(userID uint, pagination models.Pagination) (interface{}, in
 		Where("user_id = ?", userID).
 		Preload("Skill")
 
-	return executePaginatedQuery(baseQuery, pagination, &records)
+	total, err := executePaginatedQuery(baseQuery, pagination, &records)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return dto.BuildUserSkillRelationList(records), total, nil
 }
 
 func queryUserItems(userID uint, pagination models.Pagination) (interface{}, int64, error) {
@@ -83,7 +94,12 @@ func queryUserItems(userID uint, pagination models.Pagination) (interface{}, int
 		Where("user_id = ?", userID).
 		Preload("Item")
 
-	return executePaginatedQuery(baseQuery, pagination, &records)
+	total, err := executePaginatedQuery(baseQuery, pagination, &records)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return dto.BuildUserItemRelationList(records), total, nil
 }
 
 func queryUserCards(userID uint, pagination models.Pagination) (interface{}, int64, error) {
@@ -92,20 +108,25 @@ func queryUserCards(userID uint, pagination models.Pagination) (interface{}, int
 		Where("user_id = ?", userID).
 		Preload("Card")
 
-	return executePaginatedQuery(baseQuery, pagination, &records)
+	total, err := executePaginatedQuery(baseQuery, pagination, &records)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return dto.BuildUserCardRelationList(records), total, nil
 }
 
-func executePaginatedQuery(baseQuery *gorm.DB, pagination models.Pagination, dest interface{}) (interface{}, int64, error) {
+func executePaginatedQuery(baseQuery *gorm.DB, pagination models.Pagination, dest interface{}) (int64, error) {
 	var total int64
 	if err := baseQuery.Count(&total).Error; err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 
 	if err := baseQuery.Limit(pagination.Limit).Offset(pagination.Offset).Find(dest).Error; err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 
-	return dest, total, nil
+	return total, nil
 }
 
 func getRelationQueryUserID(c *gin.Context) (uint, error) {
