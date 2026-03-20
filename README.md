@@ -6,4 +6,4 @@
 - [x] 改的更面向对象一些？
 - [x] admin（或者也有user）的一些基本操作（CRUD）
 - [x] admin账户对于skill、achievement之类的游戏逻辑相关管理API
-- [ ] 用户游戏逻辑相关数据存储API
+- [x] 用户游戏逻辑相关数据存储API

@@ -43,8 +43,16 @@ func JWTAuth(tokenParser JWTTokenParser, userRepository JWTUserRepository) gin.H
 			return
 		}
 
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-		if tokenStr == "" || tokenStr == authHeader {
+		authHeader = strings.TrimSpace(authHeader)
+		var tokenStr string
+		if len(authHeader) >= 6 && strings.EqualFold(authHeader[:6], "Bearer") {
+			tokenStr = strings.TrimSpace(authHeader[6:])
+			tokenStr = strings.TrimSpace(strings.TrimPrefix(tokenStr, ":"))
+		} else {
+			tokenStr = authHeader
+		}
+
+		if tokenStr == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
 				Code:    http.StatusUnauthorized,
 				Message: "Authorization格式错误",
