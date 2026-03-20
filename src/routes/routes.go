@@ -34,6 +34,7 @@ func RegisterRoutes(r *gin.Engine) {
 					update.PUT("/password", controller.UpdatePassword)
 					update.PUT("/username", controller.UpdateUsername)
 					update.PUT("/headimage", controller.UpdateHeadImage)
+					update.PUT("/coin", controller.UpdateCoinByType)
 					update.PUT("/relations", controller.UpdateSelfRelationByType)
 				}
 				operation := profile.Group("/operation")

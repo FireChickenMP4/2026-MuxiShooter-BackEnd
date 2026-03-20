@@ -43,6 +43,36 @@ definitions:
         - $ref: '#/definitions/dto.CommonUserData'
         description: 用户
     type: object
+  dto.CommonAdminResourceData:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      prq_skill_id:
+        type: integer
+      resource_id:
+        type: integer
+      resource_name:
+        type: string
+      skill_group:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.CommonAdminResourcePageData:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/dto.CommonAdminResourceData'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
   dto.CommonRelationResourceData:
     properties:
       description:
@@ -187,6 +217,14 @@ definitions:
         description: 返回的消息
         type: string
     type: object
+  dto.UpdateCoinByTypeRequest:
+    description: 通过query参数type(strength/select)修改对应金币值
+    properties:
+      coin:
+        type: integer
+    required:
+    - coin
+    type: object
   dto.UpdatePasswordRequest:
     description: 修改密码
     properties:
@@ -209,6 +247,36 @@ definitions:
         type: string
     required:
     - new_username
+    type: object
+  dto.UserRelationCreateRequest:
+    description: 按资源ID创建本人关联记录
+    properties:
+      resource_id:
+        type: integer
+    required:
+    - resource_id
+    type: object
+  dto.UserRelationDeleteRequest:
+    description: 按资源ID删除本人关联记录
+    properties:
+      resource_id:
+        type: integer
+    required:
+    - resource_id
+    type: object
+  dto.UserRelationUpdateRequest:
+    description: 按资源ID更新本人关联记录，skills可额外更新skill_grade
+    properties:
+      claimed:
+        type: boolean
+      is_complete:
+        type: boolean
+      resource_id:
+        type: integer
+      skill_grade:
+        type: integer
+    required:
+    - resource_id
     type: object
 host: localhost:8080
 info:
@@ -313,7 +381,7 @@ paths:
             - $ref: '#/definitions/dto.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/dto.PaginatedData'
+                  $ref: '#/definitions/dto.CommonAdminResourcePageData'
               type: object
         "400":
           description: 请求参数错误
@@ -328,6 +396,58 @@ paths:
           schema:
             $ref: '#/definitions/dto.Response'
       summary: 管理员按类型查询基础资源
+      tags:
+      - admin-resource
+  /api/admin/get/user-relations:
+    get:
+      description: |-
+        通过query参数user_id和type查询指定用户在achievements/skills/items/cards中的关联数据
+        skills会返回skill_grade，其他类型没有这个字段
+        data.list: []dto.CommonUserRelationData
+      parameters:
+      - description: 用户ID
+        in: query
+        name: user_id
+        required: true
+        type: integer
+      - description: 关联类型(achievements/skills/items/cards)
+        in: query
+        name: type
+        required: true
+        type: string
+      - description: 页码，默认1
+        in: query
+        name: page
+        type: integer
+      - description: 每页多少，默认20，最大100
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CommonUserRelationPageData'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "401":
+          description: 登录状态异常
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "500":
+          description: 数据库查询失败
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: 管理员按类型查询任意用户关联数据
       tags:
       - admin-resource
   /api/admin/operation/deleteuser:
@@ -441,7 +561,12 @@ paths:
         "200":
           description: 创建成功
           schema:
-            $ref: '#/definitions/dto.Response'
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CommonAdminResourceData'
+              type: object
         "400":
           description: 请求参数错误
           schema:
@@ -488,7 +613,12 @@ paths:
         "200":
           description: 更新成功
           schema:
-            $ref: '#/definitions/dto.Response'
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CommonAdminResourceData'
+              type: object
         "400":
           description: 请求参数错误
           schema:
@@ -726,6 +856,148 @@ paths:
       summary: 用户登出（token版号增加一）
       tags:
       - profile-operation
+  /api/profile/operation/relations:
+    delete:
+      consumes:
+      - application/json
+      description: 通过query参数type在achievements/skills/items/cards中删除本人关联记录
+      parameters:
+      - description: 关联类型(achievements/skills/items/cards)
+        in: query
+        name: type
+        required: true
+        type: string
+      - description: 删除请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserRelationDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "401":
+          description: 登录状态异常
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: 关联不存在
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "500":
+          description: 数据库错误
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: 用户按类型删除关联数据
+      tags:
+      - profile-operation
+    post:
+      consumes:
+      - application/json
+      description: 通过query参数type在achievements/skills/items/cards中创建本人关联记录
+      parameters:
+      - description: 关联类型(achievements/skills/items/cards)
+        in: query
+        name: type
+        required: true
+        type: string
+      - description: 创建请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserRelationCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CommonUserRelationData'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "401":
+          description: 登录状态异常
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: 目标资源不存在
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "409":
+          description: 关联已存在
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "500":
+          description: 数据库错误
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: 用户按类型创建关联数据
+      tags:
+      - profile-operation
+  /api/profile/update/coin:
+    put:
+      consumes:
+      - application/json
+      description: 通过query参数type(strength/select)修改StrengthCoin或SelectCoin
+      parameters:
+      - description: 金币类型(strength/select)
+        in: query
+        name: type
+        required: true
+        type: string
+      - description: 修改金币请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCoinByTypeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 修改金币成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CommonUserData'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "401":
+          description: 登录状态异常
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: 用户按类型修改金币
+      tags:
+      - profile-update
   /api/profile/update/headimage:
     put:
       consumes:
@@ -807,6 +1079,54 @@ paths:
           schema:
             $ref: '#/definitions/dto.Response'
       summary: 修改用户密码
+      tags:
+      - profile-update
+  /api/profile/update/relations:
+    put:
+      consumes:
+      - application/json
+      description: 通过query参数type在achievements/skills/items/cards中更新本人关联记录
+      parameters:
+      - description: 关联类型(achievements/skills/items/cards)
+        in: query
+        name: type
+        required: true
+        type: string
+      - description: 更新请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserRelationUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CommonUserRelationData'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "401":
+          description: 登录状态异常
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: 关联不存在
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "500":
+          description: 数据库错误
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: 用户按类型更新关联数据
       tags:
       - profile-update
   /api/profile/update/username:

@@ -35,6 +35,12 @@ type UpdateHeadImageRequest struct {
 	NewHeadImage *multipart.FileHeader `form:"new_head_image" binding:"required"`
 }
 
+// @summary		用户按类型修改金币
+// @description	通过query参数type(strength/select)修改对应金币值
+type UpdateCoinByTypeRequest struct {
+	Coin *uint `json:"coin" binding:"required"`
+}
+
 // @summary		管理员删除用户请求
 // @description	按用户ID删除用户
 type AdminDeleteUserRequest struct {

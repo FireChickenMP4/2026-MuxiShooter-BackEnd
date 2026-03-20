@@ -636,6 +636,118 @@ func UpdateHeadImage(c *gin.Context) {
 	})
 }
 
+// @Summary		用户按类型修改金币
+// @Description	通过query参数type(strength/select)修改StrengthCoin或SelectCoin
+// @Tags			profile-update
+// @Accept			json
+// @Produce		json
+// @Param			type	query		string									true	"金币类型(strength/select)"
+// @Param			request	body		dto.UpdateCoinByTypeRequest				true	"修改金币请求"
+// @Success		200		{object}	dto.Response{data=dto.CommonUserData}	"修改金币成功"
+// @Failure		400		{object}	dto.Response							"请求参数错误"
+// @Failure		401		{object}	dto.Response							"登录状态异常"
+// @Failure		404		{object}	dto.Response							"用户不存在"
+// @Failure		500		{object}	dto.Response							"服务器错误"
+// @Router			/api/profile/update/coin [put]
+func UpdateCoinByType(c *gin.Context) {
+	var req dto.UpdateCoinByTypeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{
+			Code:    http.StatusBadRequest,
+			Message: "请求参数错误:" + err.Error(),
+		})
+		return
+	}
+	if req.Coin == nil {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "coin不能为空"})
+		return
+	}
+
+	coinType := c.Query("type")
+	if coinType == "" {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "缺少type参数"})
+		return
+	}
+
+	updateField := ""
+	switch coinType {
+	case "strength", "strength_coin":
+		updateField = "strength_coin"
+	case "select", "select_coin":
+		updateField = "select_coin"
+	default:
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "type参数仅支持strength/select"})
+		return
+	}
+
+	userId, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, dto.Response{
+			Code:    http.StatusUnauthorized,
+			Message: "解析后token中缺少用户信息",
+		})
+		return
+	}
+	userID, ok := userId.(uint)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, dto.Response{
+			Code:    http.StatusUnauthorized,
+			Message: "解析后token中缺少用户信息",
+		})
+		return
+	}
+
+	tx := config.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	var user models.User
+	if err := tx.Set("gorm:query_option", "FOR UPDATE").First(&user, userID).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, dto.Response{Code: http.StatusNotFound, Message: "用户不存在"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.Response{Code: http.StatusInternalServerError, Message: "数据库查询失败：" + err.Error()})
+		return
+	}
+
+	updates := map[string]interface{}{updateField: *req.Coin}
+	if err := tx.Model(&user).Updates(updates).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, dto.Response{Code: http.StatusInternalServerError, Message: "修改金币失败：" + err.Error()})
+		return
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, dto.Response{Code: http.StatusInternalServerError, Message: "提交Update请求失败：" + err.Error()})
+		return
+	}
+
+	if updateField == "strength_coin" {
+		user.StrengthCoin = *req.Coin
+	} else {
+		user.SelectCoin = *req.Coin
+	}
+
+	c.JSON(http.StatusOK, dto.Response{
+		Code:    http.StatusOK,
+		Message: "修改金币成功",
+		Data: dto.CommonUserData{
+			UserID:        user.ID,
+			Username:      user.Username,
+			Group:         user.Group,
+			HeadImagePath: user.HeadImagePath,
+			StrengthCoin:  user.StrengthCoin,
+			SelectCoin:    user.SelectCoin,
+		},
+	})
+}
+
 // @Summary		获取用户列表
 // @Description	注: 管理员可用，查询结果是多重模糊搜索叠加的效果
 // @Description	以及页码不输入或不合规范自动为第一页，每页多少不输入默认20，最多100
@@ -935,16 +1047,16 @@ func UpdateUserGroupByAdmin(c *gin.Context) {
 // @Description	通过query参数type查询skills/achievements/items/cards；支持分页与可选id精确查询
 // @Tags			admin-resource
 // @Produce		json
-// @Param			type		query		string									true	"资源类型(achievements/skills/items/cards)"
-// @Param			id			query		int										false	"资源ID，传入后优先精确查询"
-// @Param			name		query		string									false	"名称模糊搜索"
-// @Param			skill_group	query		string									false	"技能组模糊搜索(type=skills有效)"
-// @Param			page		query		int										false	"页码，默认1"
-// @Param			page_size	query		int										false	"每页多少，默认20，最大100"
+// @Param			type		query		string												true	"资源类型(achievements/skills/items/cards)"
+// @Param			id			query		int													false	"资源ID，传入后优先精确查询"
+// @Param			name		query		string												false	"名称模糊搜索"
+// @Param			skill_group	query		string												false	"技能组模糊搜索(type=skills有效)"
+// @Param			page		query		int													false	"页码，默认1"
+// @Param			page_size	query		int													false	"每页多少，默认20，最大100"
 // @Success		200			{object}	dto.Response{data=dto.CommonAdminResourcePageData}	"查询成功"
-// @Failure		400			{object}	dto.Response							"请求参数错误"
-// @Failure		401			{object}	dto.Response							"登录状态异常"
-// @Failure		500			{object}	dto.Response							"数据库查询失败"
+// @Failure		400			{object}	dto.Response										"请求参数错误"
+// @Failure		401			{object}	dto.Response										"登录状态异常"
+// @Failure		500			{object}	dto.Response										"数据库查询失败"
 // @Router			/api/admin/get/resources [get]
 func GetResourcesByTypeForAdmin(c *gin.Context) {
 	relationType, err := parseResourceType(c)
@@ -990,13 +1102,13 @@ func GetResourcesByTypeForAdmin(c *gin.Context) {
 // @Tags			admin-resource
 // @Accept			json
 // @Produce		json
-// @Param			type	query		string							true	"资源类型(achievements/skills/items/cards)"
-// @Param			request	body		dto.CommonResourceCreateRequest	true	"创建请求体"
+// @Param			type	query		string											true	"资源类型(achievements/skills/items/cards)"
+// @Param			request	body		dto.CommonResourceCreateRequest					true	"创建请求体"
 // @Success		200		{object}	dto.Response{data=dto.CommonAdminResourceData}	"创建成功"
-// @Failure		400		{object}	dto.Response					"请求参数错误"
-// @Failure		401		{object}	dto.Response					"登录状态异常"
-// @Failure		409		{object}	dto.Response					"名称冲突"
-// @Failure		500		{object}	dto.Response					"数据库错误"
+// @Failure		400		{object}	dto.Response									"请求参数错误"
+// @Failure		401		{object}	dto.Response									"登录状态异常"
+// @Failure		409		{object}	dto.Response									"名称冲突"
+// @Failure		500		{object}	dto.Response									"数据库错误"
 // @Router			/api/admin/operation/resources [post]
 func CreateResourceByTypeForAdmin(c *gin.Context) {
 	relationType, err := parseResourceType(c)
@@ -1044,14 +1156,14 @@ func CreateResourceByTypeForAdmin(c *gin.Context) {
 // @Tags			admin-resource
 // @Accept			json
 // @Produce		json
-// @Param			type	query		string							true	"资源类型(achievements/skills/items/cards)"
-// @Param			request	body		dto.CommonResourceUpdateRequest	true	"更新请求体"
+// @Param			type	query		string											true	"资源类型(achievements/skills/items/cards)"
+// @Param			request	body		dto.CommonResourceUpdateRequest					true	"更新请求体"
 // @Success		200		{object}	dto.Response{data=dto.CommonAdminResourceData}	"更新成功"
-// @Failure		400		{object}	dto.Response					"请求参数错误"
-// @Failure		401		{object}	dto.Response					"登录状态异常"
-// @Failure		404		{object}	dto.Response					"目标资源不存在"
-// @Failure		409		{object}	dto.Response					"名称冲突"
-// @Failure		500		{object}	dto.Response					"数据库错误"
+// @Failure		400		{object}	dto.Response									"请求参数错误"
+// @Failure		401		{object}	dto.Response									"登录状态异常"
+// @Failure		404		{object}	dto.Response									"目标资源不存在"
+// @Failure		409		{object}	dto.Response									"名称冲突"
+// @Failure		500		{object}	dto.Response									"数据库错误"
 // @Router			/api/admin/update/resources [put]
 func UpdateResourceByTypeForAdmin(c *gin.Context) {
 	relationType, err := parseResourceType(c)
@@ -1261,14 +1373,14 @@ func GetSelfRelationsByType(c *gin.Context) {
 // @Description	data.list: []dto.CommonUserRelationData
 // @Tags			admin-resource
 // @Produce		json
-// @Param			user_id		query		int										true	"用户ID"
-// @Param			type		query		string									true	"关联类型(achievements/skills/items/cards)"
-// @Param			page		query		int										false	"页码，默认1"
-// @Param			page_size	query		int										false	"每页多少，默认20，最大100"
+// @Param			user_id		query		int													true	"用户ID"
+// @Param			type		query		string												true	"关联类型(achievements/skills/items/cards)"
+// @Param			page		query		int													false	"页码，默认1"
+// @Param			page_size	query		int													false	"每页多少，默认20，最大100"
 // @Success		200			{object}	dto.Response{data=dto.CommonUserRelationPageData}	"查询成功"
-// @Failure		400			{object}	dto.Response									"请求参数错误"
-// @Failure		401			{object}	dto.Response									"登录状态异常"
-// @Failure		500			{object}	dto.Response									"数据库查询失败"
+// @Failure		400			{object}	dto.Response										"请求参数错误"
+// @Failure		401			{object}	dto.Response										"登录状态异常"
+// @Failure		500			{object}	dto.Response										"数据库查询失败"
 // @Router			/api/admin/get/user-relations [get]
 func GetUserRelationsByTypeForAdmin(c *gin.Context) {
 	userIDStr := c.Query("user_id")
@@ -1323,14 +1435,14 @@ func GetUserRelationsByTypeForAdmin(c *gin.Context) {
 // @Tags			profile-operation
 // @Accept			json
 // @Produce		json
-// @Param			type		query		string									true	"关联类型(achievements/skills/items/cards)"
-// @Param			request	body		dto.UserRelationCreateRequest	true	"创建请求"
-// @Success		200			{object}	dto.Response{data=dto.CommonUserRelationData}	"创建成功"
-// @Failure		400			{object}	dto.Response									"请求参数错误"
-// @Failure		401			{object}	dto.Response									"登录状态异常"
-// @Failure		404			{object}	dto.Response									"目标资源不存在"
-// @Failure		409			{object}	dto.Response									"关联已存在"
-// @Failure		500			{object}	dto.Response									"数据库错误"
+// @Param			type	query		string											true	"关联类型(achievements/skills/items/cards)"
+// @Param			request	body		dto.UserRelationCreateRequest					true	"创建请求"
+// @Success		200		{object}	dto.Response{data=dto.CommonUserRelationData}	"创建成功"
+// @Failure		400		{object}	dto.Response									"请求参数错误"
+// @Failure		401		{object}	dto.Response									"登录状态异常"
+// @Failure		404		{object}	dto.Response									"目标资源不存在"
+// @Failure		409		{object}	dto.Response									"关联已存在"
+// @Failure		500		{object}	dto.Response									"数据库错误"
 // @Router			/api/profile/operation/relations [post]
 func CreateSelfRelationByType(c *gin.Context) {
 	userID, err := getRelationQueryUserID(c)
@@ -1377,13 +1489,13 @@ func CreateSelfRelationByType(c *gin.Context) {
 // @Tags			profile-update
 // @Accept			json
 // @Produce		json
-// @Param			type		query		string									true	"关联类型(achievements/skills/items/cards)"
-// @Param			request	body		dto.UserRelationUpdateRequest	true	"更新请求"
-// @Success		200			{object}	dto.Response{data=dto.CommonUserRelationData}	"更新成功"
-// @Failure		400			{object}	dto.Response									"请求参数错误"
-// @Failure		401			{object}	dto.Response									"登录状态异常"
-// @Failure		404			{object}	dto.Response									"关联不存在"
-// @Failure		500			{object}	dto.Response									"数据库错误"
+// @Param			type	query		string											true	"关联类型(achievements/skills/items/cards)"
+// @Param			request	body		dto.UserRelationUpdateRequest					true	"更新请求"
+// @Success		200		{object}	dto.Response{data=dto.CommonUserRelationData}	"更新成功"
+// @Failure		400		{object}	dto.Response									"请求参数错误"
+// @Failure		401		{object}	dto.Response									"登录状态异常"
+// @Failure		404		{object}	dto.Response									"关联不存在"
+// @Failure		500		{object}	dto.Response									"数据库错误"
 // @Router			/api/profile/update/relations [put]
 func UpdateSelfRelationByType(c *gin.Context) {
 	userID, err := getRelationQueryUserID(c)
@@ -1430,13 +1542,13 @@ func UpdateSelfRelationByType(c *gin.Context) {
 // @Tags			profile-operation
 // @Accept			json
 // @Produce		json
-// @Param			type		query		string									true	"关联类型(achievements/skills/items/cards)"
+// @Param			type	query		string							true	"关联类型(achievements/skills/items/cards)"
 // @Param			request	body		dto.UserRelationDeleteRequest	true	"删除请求"
-// @Success		200			{object}	dto.Response									"删除成功"
-// @Failure		400			{object}	dto.Response									"请求参数错误"
-// @Failure		401			{object}	dto.Response									"登录状态异常"
-// @Failure		404			{object}	dto.Response									"关联不存在"
-// @Failure		500			{object}	dto.Response									"数据库错误"
+// @Success		200		{object}	dto.Response					"删除成功"
+// @Failure		400		{object}	dto.Response					"请求参数错误"
+// @Failure		401		{object}	dto.Response					"登录状态异常"
+// @Failure		404		{object}	dto.Response					"关联不存在"
+// @Failure		500		{object}	dto.Response					"数据库错误"
 // @Router			/api/profile/operation/relations [delete]
 func DeleteSelfRelationByType(c *gin.Context) {
 	userID, err := getRelationQueryUserID(c)
