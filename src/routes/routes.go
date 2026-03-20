@@ -9,48 +9,75 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(r *gin.Engine) {
+type AuthHTTPHandler interface {
+	Register(c *gin.Context)
+	Login(c *gin.Context)
+}
+
+type ProfileHTTPHandler interface {
+	Logout(c *gin.Context)
+	UpdatePassword(c *gin.Context)
+	UpdateUsername(c *gin.Context)
+	UpdateHeadImage(c *gin.Context)
+	UpdateCoinByType(c *gin.Context)
+	CreateSelfRelationByType(c *gin.Context)
+	UpdateSelfRelationByType(c *gin.Context)
+	DeleteSelfRelationByType(c *gin.Context)
+	GetSelfProfile(c *gin.Context)
+	GetSelfRelationsByType(c *gin.Context)
+}
+
+func RegisterRoutes(r *gin.Engine, authHandler AuthHTTPHandler, profileHandler ProfileHTTPHandler, jwtAuthMiddleware gin.HandlerFunc) {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, dto.Response{
 			Code:    http.StatusOK, //200
 			Message: "I'm OK.",
 		})
 	})
+	if authHandler == nil {
+		panic("auth handler is nil")
+	}
+	if profileHandler == nil {
+		panic("profile handler is nil")
+	}
+	if jwtAuthMiddleware == nil {
+		panic("jwt auth middleware is nil")
+	}
 	api := r.Group("/api")
 	{
 		auth := api.Group("/auth")
 		{
-			auth.POST("/register", controller.Register)
-			auth.POST("/login", controller.Login)
+			auth.POST("/register", authHandler.Register)
+			auth.POST("/login", authHandler.Login)
 		}
 
 		authGroup := api.Group("/")
-		authGroup.Use(middleware.JWTAuth())
+		authGroup.Use(jwtAuthMiddleware)
 		{
 			profile := authGroup.Group("/profile")
 			{
 				update := profile.Group("/update")
 				{
-					update.PUT("/password", controller.UpdatePassword)
-					update.PUT("/username", controller.UpdateUsername)
-					update.PUT("/headimage", controller.UpdateHeadImage)
-					update.PUT("/coin", controller.UpdateCoinByType)
-					update.PUT("/relations", controller.UpdateSelfRelationByType)
+					update.PUT("/password", profileHandler.UpdatePassword)
+					update.PUT("/username", profileHandler.UpdateUsername)
+					update.PUT("/headimage", profileHandler.UpdateHeadImage)
+					update.PUT("/coin", profileHandler.UpdateCoinByType)
+					update.PUT("/relations", profileHandler.UpdateSelfRelationByType)
 				}
 				operation := profile.Group("/operation")
 				{
-					operation.GET("/logout", controller.Logout)
-					operation.POST("/relations", controller.CreateSelfRelationByType)
-					operation.DELETE("/relations", controller.DeleteSelfRelationByType)
+					operation.GET("/logout", profileHandler.Logout)
+					operation.POST("/relations", profileHandler.CreateSelfRelationByType)
+					operation.DELETE("/relations", profileHandler.DeleteSelfRelationByType)
 				}
 				get := profile.Group("/get")
 				{
-					get.GET("/self", controller.GetSelfProfile)
+					get.GET("/self", profileHandler.GetSelfProfile)
 
 					paginatedGet := get.Group("/")
 					paginatedGet.Use(middleware.PaginationMiddleware())
 					{
-						paginatedGet.GET("/relations", controller.GetSelfRelationsByType)
+						paginatedGet.GET("/relations", profileHandler.GetSelfRelationsByType)
 					}
 				}
 			}

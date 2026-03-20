@@ -20,6 +20,23 @@ src/
 └── test/                # 测试工具
 ```
 
+### controller 分层约定（已重构）
+
+- `auth_controller.go`：仅放认证相关 HTTP 处理器（如 `Register`、`Login`）
+- `admin_user_controller.go`：仅放管理员用户管理接口（查用户/删用户/改权限组）
+- `admin_resource_controller.go`：仅放管理员资源路由入口处理器（按类型查/增/改/删资源、查用户关联）
+- `admin_resource_logic.go`：管理员资源“按类型”逻辑实现与校验（查询/创建/更新/删除的通用逻辑）
+- `admin_relation_query.go`：管理员查询用户关联数据的查询实现（按 `achievements/skills/items/cards`）
+
+### 新增代码放置建议
+
+- 新 `auth` 接口：放 `auth_controller.go`
+- 新 `admin-user` 接口：放 `admin_user_controller.go`
+- 新 `admin-resource` 接口：
+  - HTTP 入口放 `admin_resource_controller.go`
+  - 类型分发与数据操作细节放 `admin_resource_logic.go`
+- 关系查询扩展（管理员视角）放 `admin_relation_query.go`
+
 ## 构建与测试
 
 ### 构建运行

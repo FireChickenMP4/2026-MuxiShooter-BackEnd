@@ -1,19 +1,15 @@
 package controller
 
 import (
-	config "MuXi/2026-MuxiShooter-Backend/config"
 	"MuXi/2026-MuxiShooter-Backend/dto"
-	"MuXi/2026-MuxiShooter-Backend/middleware"
 	models "MuXi/2026-MuxiShooter-Backend/models"
 	"errors"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 var (
 	ErrUnsupportedRelationType = errors.New("不支持的关联表类型")
-	ErrUserIDMissing           = errors.New("上下文中缺少用户ID")
 	ErrUserIDTypeInvalid       = errors.New("上下文中的用户ID格式错误")
 )
 
@@ -42,17 +38,6 @@ func ParseUserRelationType(val string) (UserRelationType, error) {
 	return "", ErrUnsupportedRelationType
 }
 
-// QueryUserRelationByType 查询用户在指定关联表中的记录。
-// 返回值依次为：查询结果切片、总条数、错误。
-func QueryUserRelationByType(c *gin.Context, relationType UserRelationType) ([]dto.CommonUserRelationData, int64, error) {
-	userID, err := getRelationQueryUserID(c)
-	if err != nil {
-		return nil, 0, err
-	}
-	pagination := middleware.GetPagination(c)
-	return QueryUserRelationByTypeWithUserID(userID, relationType, pagination)
-}
-
 func QueryUserRelationByTypeWithUserID(userID uint, relationType UserRelationType, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error) {
 	if userID == 0 {
 		return nil, 0, ErrUserIDTypeInvalid
@@ -68,7 +53,7 @@ func QueryUserRelationByTypeWithUserID(userID uint, relationType UserRelationTyp
 
 func queryUserAchievements(userID uint, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error) {
 	var records []models.UserAchievement
-	baseQuery := config.DB.Model(&models.UserAchievement{}).
+	baseQuery := currentDB().Model(&models.UserAchievement{}).
 		Where("user_id = ?", userID).
 		Preload("Achievement")
 
@@ -82,7 +67,7 @@ func queryUserAchievements(userID uint, pagination models.Pagination) ([]dto.Com
 
 func queryUserSkills(userID uint, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error) {
 	var records []models.UserSkill
-	baseQuery := config.DB.Model(&models.UserSkill{}).
+	baseQuery := currentDB().Model(&models.UserSkill{}).
 		Where("user_id = ?", userID).
 		Preload("Skill")
 
@@ -96,7 +81,7 @@ func queryUserSkills(userID uint, pagination models.Pagination) ([]dto.CommonUse
 
 func queryUserItems(userID uint, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error) {
 	var records []models.UserItem
-	baseQuery := config.DB.Model(&models.UserItem{}).
+	baseQuery := currentDB().Model(&models.UserItem{}).
 		Where("user_id = ?", userID).
 		Preload("Item")
 
@@ -110,7 +95,7 @@ func queryUserItems(userID uint, pagination models.Pagination) ([]dto.CommonUser
 
 func queryUserCards(userID uint, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error) {
 	var records []models.UserCard
-	baseQuery := config.DB.Model(&models.UserCard{}).
+	baseQuery := currentDB().Model(&models.UserCard{}).
 		Where("user_id = ?", userID).
 		Preload("Card")
 
@@ -135,34 +120,3 @@ func executePaginatedQuery(baseQuery *gorm.DB, pagination models.Pagination, des
 	return total, nil
 }
 
-func getRelationQueryUserID(c *gin.Context) (uint, error) {
-	userIDValue, exists := c.Get("user_id")
-	if !exists {
-		return 0, ErrUserIDMissing
-	}
-
-	switch val := userIDValue.(type) {
-	case uint:
-		if val == 0 {
-			return 0, ErrUserIDTypeInvalid
-		}
-		return val, nil
-	case uint64:
-		if val == 0 {
-			return 0, ErrUserIDTypeInvalid
-		}
-		return uint(val), nil
-	case int:
-		if val <= 0 {
-			return 0, ErrUserIDTypeInvalid
-		}
-		return uint(val), nil
-	case int64:
-		if val <= 0 {
-			return 0, ErrUserIDTypeInvalid
-		}
-		return uint(val), nil
-	default:
-		return 0, ErrUserIDTypeInvalid
-	}
-}

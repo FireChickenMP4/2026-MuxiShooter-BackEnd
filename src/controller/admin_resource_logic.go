@@ -1,7 +1,6 @@
 package controller
 
 import (
-	config "MuXi/2026-MuxiShooter-Backend/config"
 	"MuXi/2026-MuxiShooter-Backend/dto"
 	models "MuXi/2026-MuxiShooter-Backend/models"
 	utils "MuXi/2026-MuxiShooter-Backend/utils"
@@ -83,7 +82,7 @@ func adminQueryAchievements(c *gin.Context, pagination models.Pagination) ([]dto
 
 	if hasID {
 		var record models.Achievement
-		err = config.DB.First(&record, id).Error
+		err = currentDB().First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []dto.CommonAdminResourceData{}, 0, nil
 		}
@@ -93,7 +92,7 @@ func adminQueryAchievements(c *gin.Context, pagination models.Pagination) ([]dto
 		return []dto.CommonAdminResourceData{dto.BuildCommonAdminAchievementData(record)}, 1, nil
 	}
 
-	db := config.DB.Model(&models.Achievement{})
+	db := currentDB().Model(&models.Achievement{})
 	if name != "" {
 		db = db.Where("name LIKE ?", "%"+name+"%")
 	}
@@ -118,7 +117,7 @@ func adminQuerySkills(c *gin.Context, pagination models.Pagination) ([]dto.Commo
 
 	if hasID {
 		var record models.Skill
-		err = config.DB.First(&record, id).Error
+		err = currentDB().First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []dto.CommonAdminResourceData{}, 0, nil
 		}
@@ -128,7 +127,7 @@ func adminQuerySkills(c *gin.Context, pagination models.Pagination) ([]dto.Commo
 		return []dto.CommonAdminResourceData{dto.BuildCommonAdminSkillData(record)}, 1, nil
 	}
 
-	db := config.DB.Model(&models.Skill{})
+	db := currentDB().Model(&models.Skill{})
 	if name != "" {
 		db = db.Where("name LIKE ?", "%"+name+"%")
 	}
@@ -155,7 +154,7 @@ func adminQueryItems(c *gin.Context, pagination models.Pagination) ([]dto.Common
 
 	if hasID {
 		var record models.Item
-		err = config.DB.First(&record, id).Error
+		err = currentDB().First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []dto.CommonAdminResourceData{}, 0, nil
 		}
@@ -165,7 +164,7 @@ func adminQueryItems(c *gin.Context, pagination models.Pagination) ([]dto.Common
 		return []dto.CommonAdminResourceData{dto.BuildCommonAdminItemData(record)}, 1, nil
 	}
 
-	db := config.DB.Model(&models.Item{})
+	db := currentDB().Model(&models.Item{})
 	if name != "" {
 		db = db.Where("name LIKE ?", "%"+name+"%")
 	}
@@ -189,7 +188,7 @@ func adminQueryCards(c *gin.Context, pagination models.Pagination) ([]dto.Common
 
 	if hasID {
 		var record models.Card
-		err = config.DB.First(&record, id).Error
+		err = currentDB().First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []dto.CommonAdminResourceData{}, 0, nil
 		}
@@ -199,7 +198,7 @@ func adminQueryCards(c *gin.Context, pagination models.Pagination) ([]dto.Common
 		return []dto.CommonAdminResourceData{dto.BuildCommonAdminCardData(record)}, 1, nil
 	}
 
-	db := config.DB.Model(&models.Card{})
+	db := currentDB().Model(&models.Card{})
 	if name != "" {
 		db = db.Where("name LIKE ?", "%"+name+"%")
 	}
@@ -223,7 +222,7 @@ func adminCreateAchievement(c *gin.Context) (dto.CommonAdminResourceData, error)
 		return dto.CommonAdminResourceData{}, err
 	}
 	record := models.Achievement{Name: req.Name, Description: req.Description}
-	if err := config.DB.Create(&record).Error; err != nil {
+	if err := currentDB().Create(&record).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
 	return dto.BuildCommonAdminAchievementData(record), nil
@@ -238,7 +237,7 @@ func adminCreateSkill(c *gin.Context) (dto.CommonAdminResourceData, error) {
 		return dto.CommonAdminResourceData{}, err
 	}
 	record := models.Skill{Name: req.Name, Description: req.Description, SkillGroup: req.SkillGroup, PrqSkillId: req.PrqSkillID}
-	if err := config.DB.Create(&record).Error; err != nil {
+	if err := currentDB().Create(&record).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
 	return dto.BuildCommonAdminSkillData(record), nil
@@ -253,7 +252,7 @@ func adminCreateItem(c *gin.Context) (dto.CommonAdminResourceData, error) {
 		return dto.CommonAdminResourceData{}, err
 	}
 	record := models.Item{Name: req.Name, Description: req.Description}
-	if err := config.DB.Create(&record).Error; err != nil {
+	if err := currentDB().Create(&record).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
 	return dto.BuildCommonAdminItemData(record), nil
@@ -268,7 +267,7 @@ func adminCreateCard(c *gin.Context) (dto.CommonAdminResourceData, error) {
 		return dto.CommonAdminResourceData{}, err
 	}
 	record := models.Card{Name: req.Name, Description: req.Description}
-	if err := config.DB.Create(&record).Error; err != nil {
+	if err := currentDB().Create(&record).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
 	return dto.BuildCommonAdminCardData(record), nil
@@ -366,13 +365,13 @@ func adminUpdateCard(c *gin.Context) (dto.CommonAdminResourceData, error) {
 
 func doUpdateAchievement(id uint, updates map[string]interface{}) (dto.CommonAdminResourceData, error) {
 	var record models.Achievement
-	if err := config.DB.First(&record, id).Error; err != nil {
+	if err := currentDB().First(&record, id).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
-	if err := config.DB.Model(&record).Updates(updates).Error; err != nil {
+	if err := currentDB().Model(&record).Updates(updates).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
-	if err := config.DB.First(&record, id).Error; err != nil {
+	if err := currentDB().First(&record, id).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
 	return dto.BuildCommonAdminAchievementData(record), nil
@@ -380,13 +379,13 @@ func doUpdateAchievement(id uint, updates map[string]interface{}) (dto.CommonAdm
 
 func doUpdateSkill(id uint, updates map[string]interface{}) (dto.CommonAdminResourceData, error) {
 	var record models.Skill
-	if err := config.DB.First(&record, id).Error; err != nil {
+	if err := currentDB().First(&record, id).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
-	if err := config.DB.Model(&record).Updates(updates).Error; err != nil {
+	if err := currentDB().Model(&record).Updates(updates).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
-	if err := config.DB.First(&record, id).Error; err != nil {
+	if err := currentDB().First(&record, id).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
 	return dto.BuildCommonAdminSkillData(record), nil
@@ -394,13 +393,13 @@ func doUpdateSkill(id uint, updates map[string]interface{}) (dto.CommonAdminReso
 
 func doUpdateItem(id uint, updates map[string]interface{}) (dto.CommonAdminResourceData, error) {
 	var record models.Item
-	if err := config.DB.First(&record, id).Error; err != nil {
+	if err := currentDB().First(&record, id).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
-	if err := config.DB.Model(&record).Updates(updates).Error; err != nil {
+	if err := currentDB().Model(&record).Updates(updates).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
-	if err := config.DB.First(&record, id).Error; err != nil {
+	if err := currentDB().First(&record, id).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
 	return dto.BuildCommonAdminItemData(record), nil
@@ -408,13 +407,13 @@ func doUpdateItem(id uint, updates map[string]interface{}) (dto.CommonAdminResou
 
 func doUpdateCard(id uint, updates map[string]interface{}) (dto.CommonAdminResourceData, error) {
 	var record models.Card
-	if err := config.DB.First(&record, id).Error; err != nil {
+	if err := currentDB().First(&record, id).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
-	if err := config.DB.Model(&record).Updates(updates).Error; err != nil {
+	if err := currentDB().Model(&record).Updates(updates).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
-	if err := config.DB.First(&record, id).Error; err != nil {
+	if err := currentDB().First(&record, id).Error; err != nil {
 		return dto.CommonAdminResourceData{}, err
 	}
 	return dto.BuildCommonAdminCardData(record), nil
@@ -443,7 +442,7 @@ func ensureUniqueResourceName(resourceType UserRelationType, name string, exclud
 
 	var count int64
 	queryByModel := func(model interface{}) error {
-		db := config.DB.Model(model).Where("name = ?", name)
+		db := currentDB().Model(model).Where("name = ?", name)
 		if excludeID != nil && *excludeID > 0 {
 			db = db.Where("id <> ?", *excludeID)
 		}
@@ -473,7 +472,7 @@ func ensureUniqueResourceName(resourceType UserRelationType, name string, exclud
 }
 
 func doDeleteByID(model interface{}, id uint) error {
-	result := config.DB.Delete(model, id)
+	result := currentDB().Delete(model, id)
 	if result.Error != nil {
 		return result.Error
 	}

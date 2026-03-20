@@ -4,13 +4,11 @@ import (
 	config "MuXi/2026-MuxiShooter-Backend/config"
 	"MuXi/2026-MuxiShooter-Backend/dto"
 	"MuXi/2026-MuxiShooter-Backend/models"
-	"errors"
 	"net/http"
 	"strings"
 	"time"
 
 	mgin "github.com/ulule/limiter/v3/drivers/middleware/gin"
-	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -18,9 +16,24 @@ import (
 	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
 
-func JWTAuth() gin.HandlerFunc {
+type JWTTokenParser interface {
+	ParseToken(tokenStr string) (jwt.MapClaims, error)
+}
+
+type JWTUserRepository interface {
+	FindByID(userID uint) (*models.User, bool, error)
+}
+
+func JWTAuth(tokenParser JWTTokenParser, userRepository JWTUserRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var err error
+		if tokenParser == nil || userRepository == nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, dto.Response{
+				Code:    http.StatusInternalServerError,
+				Message: "鉴权组件未初始化",
+			})
+			return
+		}
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
@@ -31,14 +44,15 @@ func JWTAuth() gin.HandlerFunc {
 		}
 
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+		if tokenStr == "" || tokenStr == authHeader {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
+				Code:    http.StatusUnauthorized,
+				Message: "Authorization格式错误",
+			})
+			return
+		}
 
-		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, config.ErrJWTWrongSigningMethod
-			}
-			secret := config.JWTSecret
-			return secret, nil
-		})
+		claims, err := tokenParser.ParseToken(tokenStr)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
 				Code:    http.StatusUnauthorized, //401
@@ -46,170 +60,134 @@ func JWTAuth() gin.HandlerFunc {
 			})
 			return
 		}
-		if !token.Valid {
+
+		userIDValue, uexists := claims["user_id"]
+		groupValue, gexists := claims["group"]
+		tokenVersionValue, texists := claims["token_version"]
+
+		if !texists {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
 				Code:    http.StatusUnauthorized, //401
-				Message: "无效的token",
+				Message: "缺少token版本号",
 			})
 			return
 		}
 
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			userIDValue, uexists := claims["user_id"]
-			groupValue, gexists := claims["group"]
-			tokenVersionValue, texists := claims["token_version"]
-
-			if !texists {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-					Code:    http.StatusUnauthorized, //401
-					Message: "缺少token版本号",
-				})
-				return
-			}
-
-			if !uexists {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-					Code:    http.StatusUnauthorized, //401
-					Message: "token中缺少用户id信息",
-				})
-				return
-			}
-			var userID uint
-			switch v := userIDValue.(type) {
-			case float64:
-				if v <= 0 {
-					c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-						Code:    http.StatusUnauthorized, //401
-						Message: "无效的用户ID",
-					})
-					return
-				}
-				userID = uint(v)
-			case int:
-				if v <= 0 {
-					c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-						Code:    http.StatusUnauthorized, //401
-						Message: "无效的用户ID",
-					})
-					return
-				}
-				userID = uint(v)
-			default:
-				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-					Code:    http.StatusUnauthorized, //401
-					Message: "用户ID格式错误",
-				})
-				return
-			}
-
-			var user models.User
-
-			tx := config.DB.Begin()
-			if tx.Error != nil {
-				c.AbortWithStatusJSON(http.StatusInternalServerError, dto.Response{
-					Code:    http.StatusInternalServerError, //500
-					Message: "数据库错误",
-				})
-				return
-			}
-
-			defer func() {
-				if r := recover(); r != nil {
-					tx.Rollback()
-				}
-			}()
-
-			result := tx.Set("gorm:query_option", "FOR UPDATE").First(&user, userID)
-			err = result.Error
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				tx.Rollback()
-				c.AbortWithStatusJSON(http.StatusForbidden, dto.Response{
-					Code:    http.StatusForbidden, //403
-					Message: "用户不存在",
-				})
-				return
-			}
-			if err != nil {
-				tx.Rollback()
-				c.AbortWithStatusJSON(http.StatusInternalServerError, dto.Response{
-					Code:    http.StatusInternalServerError, //500
-					Message: "查询数据库失败：" + err.Error(),
-				})
-				return
-			}
-
-			var tokenVersion uint64
-			switch v := tokenVersionValue.(type) {
-			case float64:
-				if v <= 0 {
-					c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-						Code:    http.StatusUnauthorized, //401
-						Message: "无效的TokenVersion",
-					})
-					return
-				}
-				tokenVersion = uint64(v)
-			case int64:
-				if v <= 0 {
-					c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-						Code:    http.StatusUnauthorized, //401
-						Message: "无效的TokenVersion",
-					})
-					return
-				}
-				tokenVersion = uint64(v)
-			case int:
-				if v <= 0 {
-					c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-						Code:    http.StatusUnauthorized, //401
-						Message: "无效的TokenVersion",
-					})
-					return
-				}
-				tokenVersion = uint64(v)
-			case uint:
-				if v == 0 {
-					c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-						Code:    http.StatusUnauthorized, //401
-						Message: "无效的TokenVersion",
-					})
-					return
-				}
-				tokenVersion = uint64(v)
-			default:
-				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-					Code:    http.StatusUnauthorized, //401
-					Message: "TokenVersion格式错误",
-				})
-				return
-			}
-			if tokenVersion != user.TokenVersion {
-				tx.Rollback()
-				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-					Code:    http.StatusUnauthorized, //401
-					Message: "token版本号错误",
-				})
-				return
-			}
-			c.Set("user_id", userID)
-			if gexists {
-				if groupStr, ok := groupValue.(string); ok && groupStr != "" {
-					c.Set("group", groupStr)
-				} else {
-					tx.Rollback()
-					c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
-						Code:    http.StatusUnauthorized, //401
-						Message: "用户权限组错误",
-					})
-					return
-				}
-			}
-		} else {
+		if !uexists {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
 				Code:    http.StatusUnauthorized, //401
-				Message: "无效的token声明",
+				Message: "token中缺少用户id信息",
 			})
 			return
+		}
+
+		var userID uint
+		switch v := userIDValue.(type) {
+		case float64:
+			if v <= 0 {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
+					Code:    http.StatusUnauthorized, //401
+					Message: "无效的用户ID",
+				})
+				return
+			}
+			userID = uint(v)
+		case int:
+			if v <= 0 {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
+					Code:    http.StatusUnauthorized, //401
+					Message: "无效的用户ID",
+				})
+				return
+			}
+			userID = uint(v)
+		default:
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
+				Code:    http.StatusUnauthorized, //401
+				Message: "用户ID格式错误",
+			})
+			return
+		}
+
+		user, existed, err := userRepository.FindByID(userID)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, dto.Response{
+				Code:    http.StatusInternalServerError, //500
+				Message: "查询数据库失败：" + err.Error(),
+			})
+			return
+		}
+		if !existed || user == nil {
+			c.AbortWithStatusJSON(http.StatusForbidden, dto.Response{
+				Code:    http.StatusForbidden, //403
+				Message: "用户不存在",
+			})
+			return
+		}
+
+		var tokenVersion uint64
+		switch v := tokenVersionValue.(type) {
+		case float64:
+			if v <= 0 {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
+					Code:    http.StatusUnauthorized, //401
+					Message: "无效的TokenVersion",
+				})
+				return
+			}
+			tokenVersion = uint64(v)
+		case int64:
+			if v <= 0 {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
+					Code:    http.StatusUnauthorized, //401
+					Message: "无效的TokenVersion",
+				})
+				return
+			}
+			tokenVersion = uint64(v)
+		case int:
+			if v <= 0 {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
+					Code:    http.StatusUnauthorized, //401
+					Message: "无效的TokenVersion",
+				})
+				return
+			}
+			tokenVersion = uint64(v)
+		case uint:
+			if v == 0 {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
+					Code:    http.StatusUnauthorized, //401
+					Message: "无效的TokenVersion",
+				})
+				return
+			}
+			tokenVersion = uint64(v)
+		default:
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
+				Code:    http.StatusUnauthorized, //401
+				Message: "TokenVersion格式错误",
+			})
+			return
+		}
+		if tokenVersion != user.TokenVersion {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
+				Code:    http.StatusUnauthorized, //401
+				Message: "token版本号错误",
+			})
+			return
+		}
+		c.Set("user_id", userID)
+		if gexists {
+			if groupStr, ok := groupValue.(string); ok && groupStr != "" {
+				c.Set("group", groupStr)
+			} else {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, dto.Response{
+					Code:    http.StatusUnauthorized, //401
+					Message: "用户权限组错误",
+				})
+				return
+			}
 		}
 
 		c.Next()

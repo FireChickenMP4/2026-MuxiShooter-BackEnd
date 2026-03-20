@@ -1,18 +1,85 @@
-package controller
+package repository
 
 import (
-	config "MuXi/2026-MuxiShooter-Backend/config"
 	"MuXi/2026-MuxiShooter-Backend/dto"
-	models "MuXi/2026-MuxiShooter-Backend/models"
+	"MuXi/2026-MuxiShooter-Backend/models"
+	"MuXi/2026-MuxiShooter-Backend/service"
 	"errors"
 	"time"
 
 	"gorm.io/gorm"
 )
 
-var (
-	ErrSkillGradeOnlyForSkills = errors.New("skill_grade仅skills类型可用")
-)
+type RelationRepositoryGorm struct {
+	db *gorm.DB
+}
+
+func NewRelationRepository(db *gorm.DB) *RelationRepositoryGorm {
+	return &RelationRepositoryGorm{db: db}
+}
+
+func (r *RelationRepositoryGorm) CreateUserRelation(userID uint, relationType service.UserRelationType, resourceID uint) (dto.CommonUserRelationData, error) {
+	operator, err := r.getOperator(relationType)
+	if err != nil {
+		return dto.CommonUserRelationData{}, err
+	}
+	return operator.Create(userID, resourceID)
+}
+
+func (r *RelationRepositoryGorm) UpdateUserRelation(userID uint, relationType service.UserRelationType, req dto.UserRelationUpdateRequest) (dto.CommonUserRelationData, error) {
+	operator, err := r.getOperator(relationType)
+	if err != nil {
+		return dto.CommonUserRelationData{}, err
+	}
+	return operator.Update(userID, req)
+}
+
+func (r *RelationRepositoryGorm) DeleteUserRelation(userID uint, relationType service.UserRelationType, resourceID uint) error {
+	operator, err := r.getOperator(relationType)
+	if err != nil {
+		return err
+	}
+	return operator.Delete(userID, resourceID)
+}
+
+func (r *RelationRepositoryGorm) QueryUserRelationsByType(userID uint, relationType service.UserRelationType, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error) {
+	switch relationType {
+	case service.UserRelationAchievement:
+		var records []models.UserAchievement
+		baseQuery := r.db.Model(&models.UserAchievement{}).Where("user_id = ?", userID).Preload("Achievement")
+		total, err := executePaginatedQuery(baseQuery, pagination, &records)
+		if err != nil {
+			return nil, 0, err
+		}
+		return dto.BuildCommonUserAchievementRelationList(records), total, nil
+	case service.UserRelationSkill:
+		var records []models.UserSkill
+		baseQuery := r.db.Model(&models.UserSkill{}).Where("user_id = ?", userID).Preload("Skill")
+		total, err := executePaginatedQuery(baseQuery, pagination, &records)
+		if err != nil {
+			return nil, 0, err
+		}
+		return dto.BuildCommonUserSkillRelationList(records), total, nil
+	case service.UserRelationItem:
+		var records []models.UserItem
+		baseQuery := r.db.Model(&models.UserItem{}).Where("user_id = ?", userID).Preload("Item")
+		total, err := executePaginatedQuery(baseQuery, pagination, &records)
+		if err != nil {
+			return nil, 0, err
+		}
+		return dto.BuildCommonUserItemRelationList(records), total, nil
+	case service.UserRelationCard:
+		var records []models.UserCard
+		baseQuery := r.db.Model(&models.UserCard{}).Where("user_id = ?", userID).Preload("Card")
+		total, err := executePaginatedQuery(baseQuery, pagination, &records)
+		if err != nil {
+			return nil, 0, err
+		}
+		return dto.BuildCommonUserCardRelationList(records), total, nil
+	default:
+		return nil, 0, service.ErrUnsupportedRelationType
+	}
+}
 
 type relationOperator interface {
 	Create(userID uint, resourceID uint) (dto.CommonUserRelationData, error)
@@ -20,58 +87,22 @@ type relationOperator interface {
 	Delete(userID uint, resourceID uint) error
 }
 
-type relationService struct {
-	operators map[UserRelationType]relationOperator
-}
-
-var selfRelationService = newRelationService(config.DB)
-
-func newRelationService(db *gorm.DB) *relationService {
-	return &relationService{
-		operators: map[UserRelationType]relationOperator{
-			UserRelationAchievement: &achievementRelationOperator{db: db},
-			UserRelationSkill:       &skillRelationOperator{db: db},
-			UserRelationItem:        &itemRelationOperator{db: db},
-			UserRelationCard:        &cardRelationOperator{db: db},
-		},
+func (r *RelationRepositoryGorm) getOperator(relationType service.UserRelationType) (relationOperator, error) {
+	switch relationType {
+	case service.UserRelationAchievement:
+		return &achievementRelationOperator{db: r.db}, nil
+	case service.UserRelationSkill:
+		return &skillRelationOperator{db: r.db}, nil
+	case service.UserRelationItem:
+		return &itemRelationOperator{db: r.db}, nil
+	case service.UserRelationCard:
+		return &cardRelationOperator{db: r.db}, nil
+	default:
+		return nil, service.ErrUnsupportedRelationType
 	}
 }
 
-func (s *relationService) getOperator(relationType UserRelationType) (relationOperator, error) {
-	op, exists := s.operators[relationType]
-	if !exists {
-		return nil, ErrUnsupportedRelationType
-	}
-	return op, nil
-}
-
-func createSelfRelationByType(userID uint, relationType UserRelationType, resourceID uint) (dto.CommonUserRelationData, error) {
-	op, err := selfRelationService.getOperator(relationType)
-	if err != nil {
-		return dto.CommonUserRelationData{}, err
-	}
-	return op.Create(userID, resourceID)
-}
-
-func updateSelfRelationByType(userID uint, relationType UserRelationType, req dto.UserRelationUpdateRequest) (dto.CommonUserRelationData, error) {
-	op, err := selfRelationService.getOperator(relationType)
-	if err != nil {
-		return dto.CommonUserRelationData{}, err
-	}
-	return op.Update(userID, req)
-}
-
-func deleteSelfRelationByType(userID uint, relationType UserRelationType, resourceID uint) error {
-	op, err := selfRelationService.getOperator(relationType)
-	if err != nil {
-		return err
-	}
-	return op.Delete(userID, resourceID)
-}
-
-type achievementRelationOperator struct {
-	db *gorm.DB
-}
+type achievementRelationOperator struct{ db *gorm.DB }
 
 func (op *achievementRelationOperator) Create(userID uint, resourceID uint) (dto.CommonUserRelationData, error) {
 	var resource models.Achievement
@@ -82,7 +113,7 @@ func (op *achievementRelationOperator) Create(userID uint, resourceID uint) (dto
 	var existed models.UserAchievement
 	err := op.db.Where("user_id = ? AND achievement_id = ?", userID, resourceID).First(&existed).Error
 	if err == nil {
-		return dto.CommonUserRelationData{}, ErrResourceNameExists
+		return dto.CommonUserRelationData{}, service.ErrResourceNameExists
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return dto.CommonUserRelationData{}, err
@@ -124,9 +155,7 @@ func (op *achievementRelationOperator) Delete(userID uint, resourceID uint) erro
 	return mapDeleteResult(result)
 }
 
-type skillRelationOperator struct {
-	db *gorm.DB
-}
+type skillRelationOperator struct{ db *gorm.DB }
 
 func (op *skillRelationOperator) Create(userID uint, resourceID uint) (dto.CommonUserRelationData, error) {
 	var resource models.Skill
@@ -137,7 +166,7 @@ func (op *skillRelationOperator) Create(userID uint, resourceID uint) (dto.Commo
 	var existed models.UserSkill
 	err := op.db.Where("user_id = ? AND skill_id = ?", userID, resourceID).First(&existed).Error
 	if err == nil {
-		return dto.CommonUserRelationData{}, ErrResourceNameExists
+		return dto.CommonUserRelationData{}, service.ErrResourceNameExists
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return dto.CommonUserRelationData{}, err
@@ -179,9 +208,7 @@ func (op *skillRelationOperator) Delete(userID uint, resourceID uint) error {
 	return mapDeleteResult(result)
 }
 
-type itemRelationOperator struct {
-	db *gorm.DB
-}
+type itemRelationOperator struct{ db *gorm.DB }
 
 func (op *itemRelationOperator) Create(userID uint, resourceID uint) (dto.CommonUserRelationData, error) {
 	var resource models.Item
@@ -192,7 +219,7 @@ func (op *itemRelationOperator) Create(userID uint, resourceID uint) (dto.Common
 	var existed models.UserItem
 	err := op.db.Where("user_id = ? AND item_id = ?", userID, resourceID).First(&existed).Error
 	if err == nil {
-		return dto.CommonUserRelationData{}, ErrResourceNameExists
+		return dto.CommonUserRelationData{}, service.ErrResourceNameExists
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return dto.CommonUserRelationData{}, err
@@ -234,9 +261,7 @@ func (op *itemRelationOperator) Delete(userID uint, resourceID uint) error {
 	return mapDeleteResult(result)
 }
 
-type cardRelationOperator struct {
-	db *gorm.DB
-}
+type cardRelationOperator struct{ db *gorm.DB }
 
 func (op *cardRelationOperator) Create(userID uint, resourceID uint) (dto.CommonUserRelationData, error) {
 	var resource models.Card
@@ -247,7 +272,7 @@ func (op *cardRelationOperator) Create(userID uint, resourceID uint) (dto.Common
 	var existed models.UserCard
 	err := op.db.Where("user_id = ? AND card_id = ?", userID, resourceID).First(&existed).Error
 	if err == nil {
-		return dto.CommonUserRelationData{}, ErrResourceNameExists
+		return dto.CommonUserRelationData{}, service.ErrResourceNameExists
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return dto.CommonUserRelationData{}, err
@@ -291,7 +316,7 @@ func (op *cardRelationOperator) Delete(userID uint, resourceID uint) error {
 
 func buildRelationStatusUpdates(req dto.UserRelationUpdateRequest, allowSkillGrade bool) (map[string]interface{}, error) {
 	if req.IsComplete == nil && req.Claimed == nil && req.SkillGrade == nil {
-		return nil, ErrNoUpdateFields
+		return nil, service.ErrNoUpdateFields
 	}
 
 	now := time.Now()
@@ -314,7 +339,7 @@ func buildRelationStatusUpdates(req dto.UserRelationUpdateRequest, allowSkillGra
 	}
 	if req.SkillGrade != nil {
 		if !allowSkillGrade {
-			return nil, ErrSkillGradeOnlyForSkills
+			return nil, service.ErrSkillGradeOnlyForSkills
 		}
 		updates["skill_grade"] = *req.SkillGrade
 	}
@@ -330,4 +355,17 @@ func mapDeleteResult(result *gorm.DB) error {
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+func executePaginatedQuery(baseQuery *gorm.DB, pagination models.Pagination, dest interface{}) (int64, error) {
+	var total int64
+	if err := baseQuery.Count(&total).Error; err != nil {
+		return 0, err
+	}
+
+	if err := baseQuery.Limit(pagination.Limit).Offset(pagination.Offset).Find(dest).Error; err != nil {
+		return 0, err
+	}
+
+	return total, nil
 }

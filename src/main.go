@@ -17,8 +17,14 @@ package main
 
 import (
 	config "MuXi/2026-MuxiShooter-Backend/config"
+	"MuXi/2026-MuxiShooter-Backend/controller"
 	_ "MuXi/2026-MuxiShooter-Backend/docs"
+	"MuXi/2026-MuxiShooter-Backend/handler"
+	"MuXi/2026-MuxiShooter-Backend/infrastructure/repository"
+	"MuXi/2026-MuxiShooter-Backend/infrastructure/security"
+	"MuXi/2026-MuxiShooter-Backend/middleware"
 	routes "MuXi/2026-MuxiShooter-Backend/routes"
+	"MuXi/2026-MuxiShooter-Backend/service"
 	"log"
 	"net/http"
 	"time"
@@ -30,9 +36,17 @@ import (
 )
 
 func main() {
-	config.ConnectDB()
-	config.InitAdmin(config.DB)
-	config.InitJWTSecret()
+	settings := config.LoadSettings()
+	appState, err := config.Bootstrap(settings)
+	if err != nil {
+		log.Fatalf("应用初始化失败: %v", err)
+	}
+
+	controller.SetDB(appState.DB)
+	controller.SetJWTSecret(appState.JWTSecret)
+	if err := controller.ValidateDependencies(); err != nil {
+		log.Fatalf("controller依赖初始化失败: %v", err)
+	}
 
 	r := gin.Default()
 
@@ -69,10 +83,21 @@ func main() {
 	//同样,Caddy能干这活
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	routes.RegisterRoutes(r)
 
-	// test.TestReferenceTableWithDB(config.DB)
-	// test.CleanTestData(config.DB)
+	userRepository := repository.NewUserRepository(appState.DB)
+	relationRepository := repository.NewRelationRepository(appState.DB)
+	passwordHasher := security.NewBcryptPasswordHasher()
+	tokenService := security.NewJWTTokenService(appState.JWTSecret)
+	authService := service.NewAuthService(userRepository, passwordHasher, tokenService, config.DefaultHeadImagePath)
+	authHandler := handler.NewAuthHandler(authService)
+	profileService := service.NewProfileService(userRepository, relationRepository, passwordHasher)
+	profileHandler := handler.NewProfileHandler(profileService)
+	jwtAuthMiddleware := middleware.JWTAuth(tokenService, userRepository)
+
+	routes.RegisterRoutes(r, authHandler, profileHandler, jwtAuthMiddleware)
+
+	// test.TestReferenceTableWithDB(appState.DB)
+	// test.CleanTestData(appState.DB)
 
 	log.Println("服务器启动在 http://localhost:8080")
 	srv := &http.Server{
