@@ -34,10 +34,13 @@ func RegisterRoutes(r *gin.Engine) {
 					update.PUT("/password", controller.UpdatePassword)
 					update.PUT("/username", controller.UpdateUsername)
 					update.PUT("/headimage", controller.UpdateHeadImage)
+					update.PUT("/relations", controller.UpdateSelfRelationByType)
 				}
 				operation := profile.Group("/operation")
 				{
 					operation.GET("/logout", controller.Logout)
+					operation.POST("/relations", controller.CreateSelfRelationByType)
+					operation.DELETE("/relations", controller.DeleteSelfRelationByType)
 				}
 				get := profile.Group("/get")
 				{
@@ -74,6 +77,7 @@ func RegisterRoutes(r *gin.Engine) {
 					{
 						paginatedGroup.GET("/getusers", controller.GetUsers)
 						paginatedGroup.GET("/resources", controller.GetResourcesByTypeForAdmin)
+						paginatedGroup.GET("/user-relations", controller.GetUserRelationsByTypeForAdmin)
 					}
 				}
 			}

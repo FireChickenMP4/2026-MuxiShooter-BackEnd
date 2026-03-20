@@ -49,8 +49,14 @@ func QueryUserRelationByType(c *gin.Context, relationType UserRelationType) ([]d
 	if err != nil {
 		return nil, 0, err
 	}
-
 	pagination := middleware.GetPagination(c)
+	return QueryUserRelationByTypeWithUserID(userID, relationType, pagination)
+}
+
+func QueryUserRelationByTypeWithUserID(userID uint, relationType UserRelationType, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error) {
+	if userID == 0 {
+		return nil, 0, ErrUserIDTypeInvalid
+	}
 
 	handler, exists := relationQueryHandlers[relationType]
 	if !exists {

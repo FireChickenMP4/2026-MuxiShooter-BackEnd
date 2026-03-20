@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -1252,4 +1253,226 @@ func GetSelfRelationsByType(c *gin.Context) {
 			PageSize: pagination.PageSize,
 		},
 	})
+}
+
+// @Summary		管理员按类型查询任意用户关联数据
+// @Description	通过query参数user_id和type查询指定用户在achievements/skills/items/cards中的关联数据
+// @Description	skills会返回skill_grade，其他类型没有这个字段
+// @Description	data.list: []dto.CommonUserRelationData
+// @Tags			admin-resource
+// @Produce		json
+// @Param			user_id		query		int										true	"用户ID"
+// @Param			type		query		string									true	"关联类型(achievements/skills/items/cards)"
+// @Param			page		query		int										false	"页码，默认1"
+// @Param			page_size	query		int										false	"每页多少，默认20，最大100"
+// @Success		200			{object}	dto.Response{data=dto.CommonUserRelationPageData}	"查询成功"
+// @Failure		400			{object}	dto.Response									"请求参数错误"
+// @Failure		401			{object}	dto.Response									"登录状态异常"
+// @Failure		500			{object}	dto.Response									"数据库查询失败"
+// @Router			/api/admin/get/user-relations [get]
+func GetUserRelationsByTypeForAdmin(c *gin.Context) {
+	userIDStr := c.Query("user_id")
+	if userIDStr == "" {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "缺少user_id参数"})
+		return
+	}
+
+	parsedID, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil || parsedID == 0 {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "user_id参数格式错误"})
+		return
+	}
+
+	relationTypeStr := c.Query("type")
+	if relationTypeStr == "" {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "缺少type参数"})
+		return
+	}
+
+	relationType, err := ParseUserRelationType(relationTypeStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: err.Error()})
+		return
+	}
+
+	pagination := middleware.GetPagination(c)
+	list, total, err := QueryUserRelationByTypeWithUserID(uint(parsedID), relationType, pagination)
+	if err != nil {
+		if errors.Is(err, ErrUnsupportedRelationType) || errors.Is(err, ErrUserIDTypeInvalid) {
+			c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.Response{Code: http.StatusInternalServerError, Message: "数据库查询失败：" + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Response{
+		Code:    http.StatusOK,
+		Message: "查询成功",
+		Data: dto.CommonUserRelationPageData{
+			List:     list,
+			Total:    total,
+			Page:     pagination.Page,
+			PageSize: pagination.PageSize,
+		},
+	})
+}
+
+// @Summary		用户按类型创建关联数据
+// @Description	通过query参数type在achievements/skills/items/cards中创建本人关联记录
+// @Tags			profile-operation
+// @Accept			json
+// @Produce		json
+// @Param			type		query		string									true	"关联类型(achievements/skills/items/cards)"
+// @Param			request	body		dto.UserRelationCreateRequest	true	"创建请求"
+// @Success		200			{object}	dto.Response{data=dto.CommonUserRelationData}	"创建成功"
+// @Failure		400			{object}	dto.Response									"请求参数错误"
+// @Failure		401			{object}	dto.Response									"登录状态异常"
+// @Failure		404			{object}	dto.Response									"目标资源不存在"
+// @Failure		409			{object}	dto.Response									"关联已存在"
+// @Failure		500			{object}	dto.Response									"数据库错误"
+// @Router			/api/profile/operation/relations [post]
+func CreateSelfRelationByType(c *gin.Context) {
+	userID, err := getRelationQueryUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, dto.Response{Code: http.StatusUnauthorized, Message: err.Error()})
+		return
+	}
+
+	relationTypeStr := c.Query("type")
+	if relationTypeStr == "" {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "缺少type参数"})
+		return
+	}
+	relationType, err := ParseUserRelationType(relationTypeStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: err.Error()})
+		return
+	}
+
+	var req dto.UserRelationCreateRequest
+	if err = c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "请求参数错误:" + err.Error()})
+		return
+	}
+
+	data, err := createSelfRelationByType(userID, relationType, req.ResourceID)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, dto.Response{Code: http.StatusNotFound, Message: "目标资源不存在"})
+		case errors.Is(err, ErrResourceNameExists):
+			c.JSON(http.StatusConflict, dto.Response{Code: http.StatusConflict, Message: "关联已存在"})
+		default:
+			c.JSON(http.StatusInternalServerError, dto.Response{Code: http.StatusInternalServerError, Message: "创建失败：" + err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Response{Code: http.StatusOK, Message: "创建成功", Data: data})
+}
+
+// @Summary		用户按类型更新关联数据
+// @Description	通过query参数type在achievements/skills/items/cards中更新本人关联记录
+// @Tags			profile-update
+// @Accept			json
+// @Produce		json
+// @Param			type		query		string									true	"关联类型(achievements/skills/items/cards)"
+// @Param			request	body		dto.UserRelationUpdateRequest	true	"更新请求"
+// @Success		200			{object}	dto.Response{data=dto.CommonUserRelationData}	"更新成功"
+// @Failure		400			{object}	dto.Response									"请求参数错误"
+// @Failure		401			{object}	dto.Response									"登录状态异常"
+// @Failure		404			{object}	dto.Response									"关联不存在"
+// @Failure		500			{object}	dto.Response									"数据库错误"
+// @Router			/api/profile/update/relations [put]
+func UpdateSelfRelationByType(c *gin.Context) {
+	userID, err := getRelationQueryUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, dto.Response{Code: http.StatusUnauthorized, Message: err.Error()})
+		return
+	}
+
+	relationTypeStr := c.Query("type")
+	if relationTypeStr == "" {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "缺少type参数"})
+		return
+	}
+	relationType, err := ParseUserRelationType(relationTypeStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: err.Error()})
+		return
+	}
+
+	var req dto.UserRelationUpdateRequest
+	if err = c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "请求参数错误:" + err.Error()})
+		return
+	}
+
+	data, err := updateSelfRelationByType(userID, relationType, req)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrNoUpdateFields), errors.Is(err, ErrSkillGradeOnlyForSkills), errors.Is(err, ErrUnsupportedRelationType):
+			c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: err.Error()})
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, dto.Response{Code: http.StatusNotFound, Message: "关联记录不存在"})
+		default:
+			c.JSON(http.StatusInternalServerError, dto.Response{Code: http.StatusInternalServerError, Message: "更新失败：" + err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Response{Code: http.StatusOK, Message: "更新成功", Data: data})
+}
+
+// @Summary		用户按类型删除关联数据
+// @Description	通过query参数type在achievements/skills/items/cards中删除本人关联记录
+// @Tags			profile-operation
+// @Accept			json
+// @Produce		json
+// @Param			type		query		string									true	"关联类型(achievements/skills/items/cards)"
+// @Param			request	body		dto.UserRelationDeleteRequest	true	"删除请求"
+// @Success		200			{object}	dto.Response									"删除成功"
+// @Failure		400			{object}	dto.Response									"请求参数错误"
+// @Failure		401			{object}	dto.Response									"登录状态异常"
+// @Failure		404			{object}	dto.Response									"关联不存在"
+// @Failure		500			{object}	dto.Response									"数据库错误"
+// @Router			/api/profile/operation/relations [delete]
+func DeleteSelfRelationByType(c *gin.Context) {
+	userID, err := getRelationQueryUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, dto.Response{Code: http.StatusUnauthorized, Message: err.Error()})
+		return
+	}
+
+	relationTypeStr := c.Query("type")
+	if relationTypeStr == "" {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "缺少type参数"})
+		return
+	}
+	relationType, err := ParseUserRelationType(relationTypeStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: err.Error()})
+		return
+	}
+
+	var req dto.UserRelationDeleteRequest
+	if err = c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: "请求参数错误:" + err.Error()})
+		return
+	}
+
+	if err = deleteSelfRelationByType(userID, relationType, req.ResourceID); err != nil {
+		switch {
+		case errors.Is(err, ErrUnsupportedRelationType):
+			c.JSON(http.StatusBadRequest, dto.Response{Code: http.StatusBadRequest, Message: err.Error()})
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, dto.Response{Code: http.StatusNotFound, Message: "关联记录不存在"})
+		default:
+			c.JSON(http.StatusInternalServerError, dto.Response{Code: http.StatusInternalServerError, Message: "删除失败：" + err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.Response{Code: http.StatusOK, Message: "删除成功"})
 }

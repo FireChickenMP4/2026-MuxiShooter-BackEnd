@@ -120,3 +120,24 @@ type CommonResourceUpdateRequest struct {
 type AdminDeleteResourceByTypeRequest struct {
 	ID uint `json:"id" binding:"required,gt=0"`
 }
+
+// @summary		用户创建关联请求
+// @description	按资源ID创建本人关联记录
+type UserRelationCreateRequest struct {
+	ResourceID uint `json:"resource_id" binding:"required,gt=0"`
+}
+
+// @summary		用户更新关联请求
+// @description	按资源ID更新本人关联记录，skills可额外更新skill_grade
+type UserRelationUpdateRequest struct {
+	ResourceID uint  `json:"resource_id" binding:"required,gt=0"`
+	IsComplete *bool `json:"is_complete,omitempty"`
+	Claimed    *bool `json:"claimed,omitempty"`
+	SkillGrade *uint `json:"skill_grade,omitempty"`
+}
+
+// @summary		用户删除关联请求
+// @description	按资源ID删除本人关联记录
+type UserRelationDeleteRequest struct {
+	ResourceID uint `json:"resource_id" binding:"required,gt=0"`
+}
