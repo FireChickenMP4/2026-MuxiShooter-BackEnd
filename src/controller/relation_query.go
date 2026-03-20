@@ -18,7 +18,7 @@ var (
 )
 
 type UserRelationType string
-type relationQueryHandler func(userID uint, pagination models.Pagination) (interface{}, int64, error)
+type relationQueryHandler func(userID uint, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error)
 
 const (
 	UserRelationAchievement UserRelationType = "achievements"
@@ -44,7 +44,7 @@ func ParseUserRelationType(val string) (UserRelationType, error) {
 
 // QueryUserRelationByType 查询用户在指定关联表中的记录。
 // 返回值依次为：查询结果切片、总条数、错误。
-func QueryUserRelationByType(c *gin.Context, relationType UserRelationType) (interface{}, int64, error) {
+func QueryUserRelationByType(c *gin.Context, relationType UserRelationType) ([]dto.CommonUserRelationData, int64, error) {
 	userID, err := getRelationQueryUserID(c)
 	if err != nil {
 		return nil, 0, err
@@ -60,7 +60,7 @@ func QueryUserRelationByType(c *gin.Context, relationType UserRelationType) (int
 	return handler(userID, pagination)
 }
 
-func queryUserAchievements(userID uint, pagination models.Pagination) (interface{}, int64, error) {
+func queryUserAchievements(userID uint, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error) {
 	var records []models.UserAchievement
 	baseQuery := config.DB.Model(&models.UserAchievement{}).
 		Where("user_id = ?", userID).
@@ -71,10 +71,10 @@ func queryUserAchievements(userID uint, pagination models.Pagination) (interface
 		return nil, 0, err
 	}
 
-	return dto.BuildUserAchievementRelationList(records), total, nil
+	return dto.BuildCommonUserAchievementRelationList(records), total, nil
 }
 
-func queryUserSkills(userID uint, pagination models.Pagination) (interface{}, int64, error) {
+func queryUserSkills(userID uint, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error) {
 	var records []models.UserSkill
 	baseQuery := config.DB.Model(&models.UserSkill{}).
 		Where("user_id = ?", userID).
@@ -85,10 +85,10 @@ func queryUserSkills(userID uint, pagination models.Pagination) (interface{}, in
 		return nil, 0, err
 	}
 
-	return dto.BuildUserSkillRelationList(records), total, nil
+	return dto.BuildCommonUserSkillRelationList(records), total, nil
 }
 
-func queryUserItems(userID uint, pagination models.Pagination) (interface{}, int64, error) {
+func queryUserItems(userID uint, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error) {
 	var records []models.UserItem
 	baseQuery := config.DB.Model(&models.UserItem{}).
 		Where("user_id = ?", userID).
@@ -99,10 +99,10 @@ func queryUserItems(userID uint, pagination models.Pagination) (interface{}, int
 		return nil, 0, err
 	}
 
-	return dto.BuildUserItemRelationList(records), total, nil
+	return dto.BuildCommonUserItemRelationList(records), total, nil
 }
 
-func queryUserCards(userID uint, pagination models.Pagination) (interface{}, int64, error) {
+func queryUserCards(userID uint, pagination models.Pagination) ([]dto.CommonUserRelationData, int64, error) {
 	var records []models.UserCard
 	baseQuery := config.DB.Model(&models.UserCard{}).
 		Where("user_id = ?", userID).
@@ -113,7 +113,7 @@ func queryUserCards(userID uint, pagination models.Pagination) (interface{}, int
 		return nil, 0, err
 	}
 
-	return dto.BuildUserCardRelationList(records), total, nil
+	return dto.BuildCommonUserCardRelationList(records), total, nil
 }
 
 func executePaginatedQuery(baseQuery *gorm.DB, pagination models.Pagination, dest interface{}) (int64, error) {

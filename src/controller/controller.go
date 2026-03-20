@@ -940,7 +940,7 @@ func UpdateUserGroupByAdmin(c *gin.Context) {
 // @Param			skill_group	query		string									false	"技能组模糊搜索(type=skills有效)"
 // @Param			page		query		int										false	"页码，默认1"
 // @Param			page_size	query		int										false	"每页多少，默认20，最大100"
-// @Success		200			{object}	dto.Response{data=dto.PaginatedData}	"查询成功"
+// @Success		200			{object}	dto.Response{data=dto.CommonAdminResourcePageData}	"查询成功"
 // @Failure		400			{object}	dto.Response							"请求参数错误"
 // @Failure		401			{object}	dto.Response							"登录状态异常"
 // @Failure		500			{object}	dto.Response							"数据库查询失败"
@@ -972,7 +972,7 @@ func GetResourcesByTypeForAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.Response{
 		Code:    http.StatusOK,
 		Message: "查询成功",
-		Data: dto.PaginatedData{
+		Data: dto.CommonAdminResourcePageData{
 			List:     list,
 			Total:    total,
 			Page:     pagination.Page,
@@ -991,7 +991,7 @@ func GetResourcesByTypeForAdmin(c *gin.Context) {
 // @Produce		json
 // @Param			type	query		string							true	"资源类型(achievements/skills/items/cards)"
 // @Param			request	body		dto.CommonResourceCreateRequest	true	"创建请求体"
-// @Success		200		{object}	dto.Response					"创建成功"
+// @Success		200		{object}	dto.Response{data=dto.CommonAdminResourceData}	"创建成功"
 // @Failure		400		{object}	dto.Response					"请求参数错误"
 // @Failure		401		{object}	dto.Response					"登录状态异常"
 // @Failure		409		{object}	dto.Response					"名称冲突"
@@ -1045,7 +1045,7 @@ func CreateResourceByTypeForAdmin(c *gin.Context) {
 // @Produce		json
 // @Param			type	query		string							true	"资源类型(achievements/skills/items/cards)"
 // @Param			request	body		dto.CommonResourceUpdateRequest	true	"更新请求体"
-// @Success		200		{object}	dto.Response					"更新成功"
+// @Success		200		{object}	dto.Response{data=dto.CommonAdminResourceData}	"更新成功"
 // @Failure		400		{object}	dto.Response					"请求参数错误"
 // @Failure		401		{object}	dto.Response					"登录状态异常"
 // @Failure		404		{object}	dto.Response					"目标资源不存在"
@@ -1135,7 +1135,7 @@ func DeleteResourceByTypeForAdmin(c *gin.Context) {
 }
 
 // @Summary	获取用户自身基础信息
-// @Tags		profile
+// @Tags		profile-get
 // @Produce	json
 // @Success	200	{object}	dto.Response{data=dto.CommonUserData}	"查询成功"
 // @Failure	401	{object}	dto.Response							"登录状态异常"
@@ -1188,7 +1188,7 @@ func GetSelfProfile(c *gin.Context) {
 // @Description	skills会返回skill_grade，其他类型没有这个字段
 // @Description	data.list: []dto.CommonUserRelationData
 // @Description	skills entries may additionally include skill_grade
-// @Tags			profile
+// @Tags			profile-get
 // @Produce		json
 // @Param			type		query		string												true	"关联类型(achievements/skills/items/cards)"
 // @Param			page		query		int													false	"页码，默认1"
@@ -1245,7 +1245,7 @@ func GetSelfRelationsByType(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.Response{
 		Code:    http.StatusOK,
 		Message: "查询成功",
-		Data: dto.PaginatedData{
+		Data: dto.CommonUserRelationPageData{
 			List:     list,
 			Total:    total,
 			Page:     pagination.Page,

@@ -21,9 +21,9 @@ var (
 	ErrInvalidRequestBody   = errors.New("请求参数错误")
 )
 
-type adminResourceQueryHandler func(c *gin.Context, pagination models.Pagination) (interface{}, int64, error)
-type adminResourceCreateHandler func(c *gin.Context) (interface{}, error)
-type adminResourceUpdateHandler func(c *gin.Context) (interface{}, error)
+type adminResourceQueryHandler func(c *gin.Context, pagination models.Pagination) ([]dto.CommonAdminResourceData, int64, error)
+type adminResourceCreateHandler func(c *gin.Context) (dto.CommonAdminResourceData, error)
+type adminResourceUpdateHandler func(c *gin.Context) (dto.CommonAdminResourceData, error)
 type adminResourceDeleteHandler func(id uint) error
 
 var adminResourceQueryHandlers = map[UserRelationType]adminResourceQueryHandler{
@@ -74,7 +74,7 @@ func parseOptionalID(c *gin.Context) (uint, bool, error) {
 	return uint(idValue), true, nil
 }
 
-func adminQueryAchievements(c *gin.Context, pagination models.Pagination) (interface{}, int64, error) {
+func adminQueryAchievements(c *gin.Context, pagination models.Pagination) ([]dto.CommonAdminResourceData, int64, error) {
 	id, hasID, err := parseOptionalID(c)
 	if err != nil {
 		return nil, 0, err
@@ -85,12 +85,12 @@ func adminQueryAchievements(c *gin.Context, pagination models.Pagination) (inter
 		var record models.Achievement
 		err = config.DB.First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []dto.AdminAchievementData{}, 0, nil
+			return []dto.CommonAdminResourceData{}, 0, nil
 		}
 		if err != nil {
 			return nil, 0, err
 		}
-		return []dto.AdminAchievementData{dto.BuildAdminAchievementData(record)}, 1, nil
+		return []dto.CommonAdminResourceData{dto.BuildCommonAdminAchievementData(record)}, 1, nil
 	}
 
 	db := config.DB.Model(&models.Achievement{})
@@ -105,10 +105,10 @@ func adminQueryAchievements(c *gin.Context, pagination models.Pagination) (inter
 	if err = db.Limit(pagination.Limit).Offset(pagination.Offset).Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
-	return dto.BuildAdminAchievementList(list), total, nil
+	return dto.BuildCommonAdminAchievementList(list), total, nil
 }
 
-func adminQuerySkills(c *gin.Context, pagination models.Pagination) (interface{}, int64, error) {
+func adminQuerySkills(c *gin.Context, pagination models.Pagination) ([]dto.CommonAdminResourceData, int64, error) {
 	id, hasID, err := parseOptionalID(c)
 	if err != nil {
 		return nil, 0, err
@@ -120,12 +120,12 @@ func adminQuerySkills(c *gin.Context, pagination models.Pagination) (interface{}
 		var record models.Skill
 		err = config.DB.First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []dto.AdminSkillData{}, 0, nil
+			return []dto.CommonAdminResourceData{}, 0, nil
 		}
 		if err != nil {
 			return nil, 0, err
 		}
-		return []dto.AdminSkillData{dto.BuildAdminSkillData(record)}, 1, nil
+		return []dto.CommonAdminResourceData{dto.BuildCommonAdminSkillData(record)}, 1, nil
 	}
 
 	db := config.DB.Model(&models.Skill{})
@@ -143,10 +143,10 @@ func adminQuerySkills(c *gin.Context, pagination models.Pagination) (interface{}
 	if err = db.Limit(pagination.Limit).Offset(pagination.Offset).Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
-	return dto.BuildAdminSkillList(list), total, nil
+	return dto.BuildCommonAdminSkillList(list), total, nil
 }
 
-func adminQueryItems(c *gin.Context, pagination models.Pagination) (interface{}, int64, error) {
+func adminQueryItems(c *gin.Context, pagination models.Pagination) ([]dto.CommonAdminResourceData, int64, error) {
 	id, hasID, err := parseOptionalID(c)
 	if err != nil {
 		return nil, 0, err
@@ -157,12 +157,12 @@ func adminQueryItems(c *gin.Context, pagination models.Pagination) (interface{},
 		var record models.Item
 		err = config.DB.First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []dto.AdminItemData{}, 0, nil
+			return []dto.CommonAdminResourceData{}, 0, nil
 		}
 		if err != nil {
 			return nil, 0, err
 		}
-		return []dto.AdminItemData{dto.BuildAdminItemData(record)}, 1, nil
+		return []dto.CommonAdminResourceData{dto.BuildCommonAdminItemData(record)}, 1, nil
 	}
 
 	db := config.DB.Model(&models.Item{})
@@ -177,10 +177,10 @@ func adminQueryItems(c *gin.Context, pagination models.Pagination) (interface{},
 	if err = db.Limit(pagination.Limit).Offset(pagination.Offset).Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
-	return dto.BuildAdminItemList(list), total, nil
+	return dto.BuildCommonAdminItemList(list), total, nil
 }
 
-func adminQueryCards(c *gin.Context, pagination models.Pagination) (interface{}, int64, error) {
+func adminQueryCards(c *gin.Context, pagination models.Pagination) ([]dto.CommonAdminResourceData, int64, error) {
 	id, hasID, err := parseOptionalID(c)
 	if err != nil {
 		return nil, 0, err
@@ -191,12 +191,12 @@ func adminQueryCards(c *gin.Context, pagination models.Pagination) (interface{},
 		var record models.Card
 		err = config.DB.First(&record, id).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return []dto.AdminCardData{}, 0, nil
+			return []dto.CommonAdminResourceData{}, 0, nil
 		}
 		if err != nil {
 			return nil, 0, err
 		}
-		return []dto.AdminCardData{dto.BuildAdminCardData(record)}, 1, nil
+		return []dto.CommonAdminResourceData{dto.BuildCommonAdminCardData(record)}, 1, nil
 	}
 
 	db := config.DB.Model(&models.Card{})
@@ -211,78 +211,78 @@ func adminQueryCards(c *gin.Context, pagination models.Pagination) (interface{},
 	if err = db.Limit(pagination.Limit).Offset(pagination.Offset).Find(&list).Error; err != nil {
 		return nil, 0, err
 	}
-	return dto.BuildAdminCardList(list), total, nil
+	return dto.BuildCommonAdminCardList(list), total, nil
 }
 
-func adminCreateAchievement(c *gin.Context) (interface{}, error) {
+func adminCreateAchievement(c *gin.Context) (dto.CommonAdminResourceData, error) {
 	var req dto.AdminCreateAchievementRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return nil, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
+		return dto.CommonAdminResourceData{}, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
 	}
 	if err := ensureUniqueResourceName(UserRelationAchievement, req.Name, nil); err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	record := models.Achievement{Name: req.Name, Description: req.Description}
 	if err := config.DB.Create(&record).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
-	return dto.BuildAdminAchievementData(record), nil
+	return dto.BuildCommonAdminAchievementData(record), nil
 }
 
-func adminCreateSkill(c *gin.Context) (interface{}, error) {
+func adminCreateSkill(c *gin.Context) (dto.CommonAdminResourceData, error) {
 	var req dto.AdminCreateSkillRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return nil, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
+		return dto.CommonAdminResourceData{}, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
 	}
 	if err := ensureUniqueResourceName(UserRelationSkill, req.Name, nil); err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	record := models.Skill{Name: req.Name, Description: req.Description, SkillGroup: req.SkillGroup, PrqSkillId: req.PrqSkillID}
 	if err := config.DB.Create(&record).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
-	return dto.BuildAdminSkillData(record), nil
+	return dto.BuildCommonAdminSkillData(record), nil
 }
 
-func adminCreateItem(c *gin.Context) (interface{}, error) {
+func adminCreateItem(c *gin.Context) (dto.CommonAdminResourceData, error) {
 	var req dto.AdminCreateItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return nil, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
+		return dto.CommonAdminResourceData{}, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
 	}
 	if err := ensureUniqueResourceName(UserRelationItem, req.Name, nil); err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	record := models.Item{Name: req.Name, Description: req.Description}
 	if err := config.DB.Create(&record).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
-	return dto.BuildAdminItemData(record), nil
+	return dto.BuildCommonAdminItemData(record), nil
 }
 
-func adminCreateCard(c *gin.Context) (interface{}, error) {
+func adminCreateCard(c *gin.Context) (dto.CommonAdminResourceData, error) {
 	var req dto.AdminCreateCardRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return nil, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
+		return dto.CommonAdminResourceData{}, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
 	}
 	if err := ensureUniqueResourceName(UserRelationCard, req.Name, nil); err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	record := models.Card{Name: req.Name, Description: req.Description}
 	if err := config.DB.Create(&record).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
-	return dto.BuildAdminCardData(record), nil
+	return dto.BuildCommonAdminCardData(record), nil
 }
 
-func adminUpdateAchievement(c *gin.Context) (interface{}, error) {
+func adminUpdateAchievement(c *gin.Context) (dto.CommonAdminResourceData, error) {
 	var req dto.AdminUpdateAchievementRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return nil, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
+		return dto.CommonAdminResourceData{}, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
 	}
 	updates := map[string]interface{}{}
 	if req.Name != nil {
 		if err := ensureUniqueResourceName(UserRelationAchievement, *req.Name, &req.ID); err != nil {
-			return nil, err
+			return dto.CommonAdminResourceData{}, err
 		}
 		updates["name"] = *req.Name
 	}
@@ -290,20 +290,20 @@ func adminUpdateAchievement(c *gin.Context) (interface{}, error) {
 		updates["description"] = *req.Description
 	}
 	if len(updates) == 0 {
-		return nil, ErrNoUpdateFields
+		return dto.CommonAdminResourceData{}, ErrNoUpdateFields
 	}
 	return doUpdateAchievement(req.ID, updates)
 }
 
-func adminUpdateSkill(c *gin.Context) (interface{}, error) {
+func adminUpdateSkill(c *gin.Context) (dto.CommonAdminResourceData, error) {
 	var req dto.AdminUpdateSkillRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return nil, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
+		return dto.CommonAdminResourceData{}, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
 	}
 	updates := map[string]interface{}{}
 	if req.Name != nil {
 		if err := ensureUniqueResourceName(UserRelationSkill, *req.Name, &req.ID); err != nil {
-			return nil, err
+			return dto.CommonAdminResourceData{}, err
 		}
 		updates["name"] = *req.Name
 	}
@@ -317,20 +317,20 @@ func adminUpdateSkill(c *gin.Context) (interface{}, error) {
 		updates["prq_skill_id"] = *req.PrqSkillID
 	}
 	if len(updates) == 0 {
-		return nil, ErrNoUpdateFields
+		return dto.CommonAdminResourceData{}, ErrNoUpdateFields
 	}
 	return doUpdateSkill(req.ID, updates)
 }
 
-func adminUpdateItem(c *gin.Context) (interface{}, error) {
+func adminUpdateItem(c *gin.Context) (dto.CommonAdminResourceData, error) {
 	var req dto.AdminUpdateItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return nil, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
+		return dto.CommonAdminResourceData{}, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
 	}
 	updates := map[string]interface{}{}
 	if req.Name != nil {
 		if err := ensureUniqueResourceName(UserRelationItem, *req.Name, &req.ID); err != nil {
-			return nil, err
+			return dto.CommonAdminResourceData{}, err
 		}
 		updates["name"] = *req.Name
 	}
@@ -338,20 +338,20 @@ func adminUpdateItem(c *gin.Context) (interface{}, error) {
 		updates["description"] = *req.Description
 	}
 	if len(updates) == 0 {
-		return nil, ErrNoUpdateFields
+		return dto.CommonAdminResourceData{}, ErrNoUpdateFields
 	}
 	return doUpdateItem(req.ID, updates)
 }
 
-func adminUpdateCard(c *gin.Context) (interface{}, error) {
+func adminUpdateCard(c *gin.Context) (dto.CommonAdminResourceData, error) {
 	var req dto.AdminUpdateCardRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return nil, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
+		return dto.CommonAdminResourceData{}, fmt.Errorf("%w:%v", ErrInvalidRequestBody, err)
 	}
 	updates := map[string]interface{}{}
 	if req.Name != nil {
 		if err := ensureUniqueResourceName(UserRelationCard, *req.Name, &req.ID); err != nil {
-			return nil, err
+			return dto.CommonAdminResourceData{}, err
 		}
 		updates["name"] = *req.Name
 	}
@@ -359,65 +359,65 @@ func adminUpdateCard(c *gin.Context) (interface{}, error) {
 		updates["description"] = *req.Description
 	}
 	if len(updates) == 0 {
-		return nil, ErrNoUpdateFields
+		return dto.CommonAdminResourceData{}, ErrNoUpdateFields
 	}
 	return doUpdateCard(req.ID, updates)
 }
 
-func doUpdateAchievement(id uint, updates map[string]interface{}) (interface{}, error) {
+func doUpdateAchievement(id uint, updates map[string]interface{}) (dto.CommonAdminResourceData, error) {
 	var record models.Achievement
 	if err := config.DB.First(&record, id).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	if err := config.DB.Model(&record).Updates(updates).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	if err := config.DB.First(&record, id).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
-	return dto.BuildAdminAchievementData(record), nil
+	return dto.BuildCommonAdminAchievementData(record), nil
 }
 
-func doUpdateSkill(id uint, updates map[string]interface{}) (interface{}, error) {
+func doUpdateSkill(id uint, updates map[string]interface{}) (dto.CommonAdminResourceData, error) {
 	var record models.Skill
 	if err := config.DB.First(&record, id).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	if err := config.DB.Model(&record).Updates(updates).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	if err := config.DB.First(&record, id).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
-	return dto.BuildAdminSkillData(record), nil
+	return dto.BuildCommonAdminSkillData(record), nil
 }
 
-func doUpdateItem(id uint, updates map[string]interface{}) (interface{}, error) {
+func doUpdateItem(id uint, updates map[string]interface{}) (dto.CommonAdminResourceData, error) {
 	var record models.Item
 	if err := config.DB.First(&record, id).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	if err := config.DB.Model(&record).Updates(updates).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	if err := config.DB.First(&record, id).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
-	return dto.BuildAdminItemData(record), nil
+	return dto.BuildCommonAdminItemData(record), nil
 }
 
-func doUpdateCard(id uint, updates map[string]interface{}) (interface{}, error) {
+func doUpdateCard(id uint, updates map[string]interface{}) (dto.CommonAdminResourceData, error) {
 	var record models.Card
 	if err := config.DB.First(&record, id).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	if err := config.DB.Model(&record).Updates(updates).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
 	if err := config.DB.First(&record, id).Error; err != nil {
-		return nil, err
+		return dto.CommonAdminResourceData{}, err
 	}
-	return dto.BuildAdminCardData(record), nil
+	return dto.BuildCommonAdminCardData(record), nil
 }
 
 func adminDeleteAchievement(id uint) error {

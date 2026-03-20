@@ -679,7 +679,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 按类型获取用户关联数据
       tags:
-      - profile
+      - profile-get
   /api/profile/get/self:
     get:
       produces:
@@ -704,7 +704,7 @@ paths:
             $ref: '#/definitions/dto.Response'
       summary: 获取用户自身基础信息
       tags:
-      - profile
+      - profile-get
   /api/profile/operation/logout:
     get:
       description: 用户登出（token版号增加一）

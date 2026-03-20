@@ -126,6 +126,89 @@ type CommonUserRelationPageData struct {
 	PageSize int                      `json:"page_size"`
 }
 
+func BuildCommonUserAchievementRelationList(records []models.UserAchievement) []CommonUserRelationData {
+	result := make([]CommonUserRelationData, 0, len(records))
+	for _, record := range records {
+		result = append(result, CommonUserRelationData{
+			IsComplete: record.IsComplete,
+			CompleteAt: record.CompleteAt,
+			Claimed:    record.Claimed,
+			ClaimedAt:  record.ClaimedAt,
+			CreatedAt:  record.CreatedAt,
+			UpdatedAt:  record.UpdatedAt,
+			Resource: CommonRelationResourceData{
+				ResourceID:   record.Achievement.ID,
+				ResourceName: record.Achievement.Name,
+				Description:  record.Achievement.Description,
+			},
+		})
+	}
+	return result
+}
+
+func BuildCommonUserSkillRelationList(records []models.UserSkill) []CommonUserRelationData {
+	result := make([]CommonUserRelationData, 0, len(records))
+	for _, record := range records {
+		result = append(result, CommonUserRelationData{
+			IsComplete: record.IsComplete,
+			CompleteAt: record.CompleteAt,
+			SkillGrade: record.SkillGrade,
+			Claimed:    record.Claimed,
+			ClaimedAt:  record.ClaimedAt,
+			CreatedAt:  record.CreatedAt,
+			UpdatedAt:  record.UpdatedAt,
+			Resource: CommonRelationResourceData{
+				ResourceID:   record.Skill.ID,
+				ResourceName: record.Skill.Name,
+				Description:  record.Skill.Description,
+				SkillGroup:   record.Skill.SkillGroup,
+				PrqSkillID:   record.Skill.PrqSkillId,
+			},
+		})
+	}
+	return result
+}
+
+func BuildCommonUserItemRelationList(records []models.UserItem) []CommonUserRelationData {
+	result := make([]CommonUserRelationData, 0, len(records))
+	for _, record := range records {
+		result = append(result, CommonUserRelationData{
+			IsComplete: record.IsComplete,
+			CompleteAt: record.CompleteAt,
+			Claimed:    record.Claimed,
+			ClaimedAt:  record.ClaimedAt,
+			CreatedAt:  record.CreatedAt,
+			UpdatedAt:  record.UpdatedAt,
+			Resource: CommonRelationResourceData{
+				ResourceID:   record.Item.ID,
+				ResourceName: record.Item.Name,
+				Description:  record.Item.Description,
+			},
+		})
+	}
+	return result
+}
+
+func BuildCommonUserCardRelationList(records []models.UserCard) []CommonUserRelationData {
+	result := make([]CommonUserRelationData, 0, len(records))
+	for _, record := range records {
+		result = append(result, CommonUserRelationData{
+			IsComplete: record.IsComplete,
+			CompleteAt: record.CompleteAt,
+			Claimed:    record.Claimed,
+			ClaimedAt:  record.ClaimedAt,
+			CreatedAt:  record.CreatedAt,
+			UpdatedAt:  record.UpdatedAt,
+			Resource: CommonRelationResourceData{
+				ResourceID:   record.Card.ID,
+				ResourceName: record.Card.Name,
+				Description:  record.Card.Description,
+			},
+		})
+	}
+	return result
+}
+
 func BuildUserAchievementRelationList(records []models.UserAchievement) []UserAchievementRelationData {
 	result := make([]UserAchievementRelationData, 0, len(records))
 	for _, record := range records {

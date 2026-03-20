@@ -650,7 +650,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile"
+                    "profile-get"
                 ],
                 "summary": "按类型获取用户关联数据",
                 "parameters": [
@@ -720,7 +720,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "profile"
+                    "profile-get"
                 ],
                 "summary": "获取用户自身基础信息",
                 "responses": {

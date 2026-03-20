@@ -67,6 +67,23 @@ type AdminCardPageData struct {
 	PageSize int             `json:"page_size"`
 }
 
+type CommonAdminResourceData struct {
+	ResourceID   uint      `json:"resource_id"`
+	ResourceName string    `json:"resource_name"`
+	Description  string    `json:"description"`
+	SkillGroup   string    `json:"skill_group,omitempty"`
+	PrqSkillID   uint      `json:"prq_skill_id,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type CommonAdminResourcePageData struct {
+	List     []CommonAdminResourceData `json:"list"`
+	Total    int64                     `json:"total"`
+	Page     int                       `json:"page"`
+	PageSize int                       `json:"page_size"`
+}
+
 func BuildAdminAchievementData(record models.Achievement) AdminAchievementData {
 	return AdminAchievementData{
 		AchievementID:   record.ID,
@@ -107,6 +124,80 @@ func BuildAdminCardData(record models.Card) AdminCardData {
 		CreatedAt:   record.CreatedAt,
 		UpdatedAt:   record.UpdatedAt,
 	}
+}
+
+func BuildCommonAdminAchievementData(record models.Achievement) CommonAdminResourceData {
+	return CommonAdminResourceData{
+		ResourceID:   record.ID,
+		ResourceName: record.Name,
+		Description:  record.Description,
+		CreatedAt:    record.CreatedAt,
+		UpdatedAt:    record.UpdatedAt,
+	}
+}
+
+func BuildCommonAdminSkillData(record models.Skill) CommonAdminResourceData {
+	return CommonAdminResourceData{
+		ResourceID:   record.ID,
+		ResourceName: record.Name,
+		Description:  record.Description,
+		SkillGroup:   record.SkillGroup,
+		PrqSkillID:   record.PrqSkillId,
+		CreatedAt:    record.CreatedAt,
+		UpdatedAt:    record.UpdatedAt,
+	}
+}
+
+func BuildCommonAdminItemData(record models.Item) CommonAdminResourceData {
+	return CommonAdminResourceData{
+		ResourceID:   record.ID,
+		ResourceName: record.Name,
+		Description:  record.Description,
+		CreatedAt:    record.CreatedAt,
+		UpdatedAt:    record.UpdatedAt,
+	}
+}
+
+func BuildCommonAdminCardData(record models.Card) CommonAdminResourceData {
+	return CommonAdminResourceData{
+		ResourceID:   record.ID,
+		ResourceName: record.Name,
+		Description:  record.Description,
+		CreatedAt:    record.CreatedAt,
+		UpdatedAt:    record.UpdatedAt,
+	}
+}
+
+func BuildCommonAdminAchievementList(records []models.Achievement) []CommonAdminResourceData {
+	result := make([]CommonAdminResourceData, 0, len(records))
+	for _, record := range records {
+		result = append(result, BuildCommonAdminAchievementData(record))
+	}
+	return result
+}
+
+func BuildCommonAdminSkillList(records []models.Skill) []CommonAdminResourceData {
+	result := make([]CommonAdminResourceData, 0, len(records))
+	for _, record := range records {
+		result = append(result, BuildCommonAdminSkillData(record))
+	}
+	return result
+}
+
+func BuildCommonAdminItemList(records []models.Item) []CommonAdminResourceData {
+	result := make([]CommonAdminResourceData, 0, len(records))
+	for _, record := range records {
+		result = append(result, BuildCommonAdminItemData(record))
+	}
+	return result
+}
+
+func BuildCommonAdminCardList(records []models.Card) []CommonAdminResourceData {
+	result := make([]CommonAdminResourceData, 0, len(records))
+	for _, record := range records {
+		result = append(result, BuildCommonAdminCardData(record))
+	}
+	return result
 }
 
 func BuildAdminAchievementList(records []models.Achievement) []AdminAchievementData {
