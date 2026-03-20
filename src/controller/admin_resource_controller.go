@@ -17,8 +17,8 @@ import (
 // @Produce		json
 // @Param			type		query		string												true	"资源类型(achievements/skills/items/cards)"
 // @Param			id			query		int													false	"资源ID，传入后优先精确查询"
-// @Param			name		query		string											false	"名称模糊搜索"
-// @Param			skill_group	query		string											false	"技能组模糊搜索(type=skills有效)"
+// @Param			name		query		string												false	"名称模糊搜索"
+// @Param			skill_group	query		string												false	"技能组模糊搜索(type=skills有效)"
 // @Param			page		query		int													false	"页码，默认1"
 // @Param			page_size	query		int													false	"每页多少，默认20，最大100"
 // @Success		200			{object}	dto.Response{data=dto.CommonAdminResourcePageData}	"查询成功"
@@ -53,7 +53,7 @@ func GetResourcesByTypeForAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.Response{
 		Code:    http.StatusOK,
 		Message: "查询成功",
-		Data: dto.CommonAdminResourcePageData{List: list, Total: total, Page: pagination.Page, PageSize: pagination.PageSize},
+		Data:    dto.CommonAdminResourcePageData{List: list, Total: total, Page: pagination.Page, PageSize: pagination.PageSize},
 	})
 }
 
@@ -63,8 +63,8 @@ func GetResourcesByTypeForAdmin(c *gin.Context) {
 // @Tags			admin-resource
 // @Accept			json
 // @Produce		json
-// @Param			type	query		string												true	"资源类型(achievements/skills/items/cards)"
-// @Param			request	body		dto.CommonResourceCreateRequest				true	"创建请求体"
+// @Param			type	query		string											true	"资源类型(achievements/skills/items/cards)"
+// @Param			request	body		dto.CommonResourceCreateRequest					true	"创建请求体"
 // @Success		200		{object}	dto.Response{data=dto.CommonAdminResourceData}	"创建成功"
 // @Failure		400		{object}	dto.Response									"请求参数错误"
 // @Failure		401		{object}	dto.Response									"登录状态异常"
@@ -111,8 +111,8 @@ func CreateResourceByTypeForAdmin(c *gin.Context) {
 // @Tags			admin-resource
 // @Accept			json
 // @Produce		json
-// @Param			type	query		string												true	"资源类型(achievements/skills/items/cards)"
-// @Param			request	body		dto.CommonResourceUpdateRequest				true	"更新请求体"
+// @Param			type	query		string											true	"资源类型(achievements/skills/items/cards)"
+// @Param			request	body		dto.CommonResourceUpdateRequest					true	"更新请求体"
 // @Success		200		{object}	dto.Response{data=dto.CommonAdminResourceData}	"更新成功"
 // @Failure		400		{object}	dto.Response									"请求参数错误"
 // @Failure		401		{object}	dto.Response									"登录状态异常"
@@ -204,8 +204,8 @@ func DeleteResourceByTypeForAdmin(c *gin.Context) {
 // @Description	data.list: []dto.CommonUserRelationData
 // @Tags			admin-resource
 // @Produce		json
-// @Param			user_id		query		int												true	"用户ID"
-// @Param			type		query		string											true	"关联类型(achievements/skills/items/cards)"
+// @Param			user_id		query		int													true	"用户ID"
+// @Param			type		query		string												true	"关联类型(achievements/skills/items/cards)"
 // @Param			page		query		int													false	"页码，默认1"
 // @Param			page_size	query		int													false	"每页多少，默认20，最大100"
 // @Success		200			{object}	dto.Response{data=dto.CommonUserRelationPageData}	"查询成功"
@@ -252,6 +252,6 @@ func GetUserRelationsByTypeForAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.Response{
 		Code:    http.StatusOK,
 		Message: "查询成功",
-		Data: dto.CommonUserRelationPageData{List: list, Total: total, Page: pagination.Page, PageSize: pagination.PageSize},
+		Data:    dto.CommonUserRelationPageData{List: list, Total: total, Page: pagination.Page, PageSize: pagination.PageSize},
 	})
 }

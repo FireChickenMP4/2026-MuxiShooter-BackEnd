@@ -9,20 +9,20 @@ import (
 )
 
 var (
-	ErrMissingUserContext  = errors.New("解析后token中缺少用户信息")
-	ErrPasswordTooFrequent = errors.New("修改密码间隔过短")
-	ErrUsernameTooFrequent = errors.New("修改用户名间隔过短")
-	ErrHeadImageTooFrequent = errors.New("修改头像间隔过短")
-	ErrSamePassword        = errors.New("所给新旧密码不能相同")
-	ErrInvalidOldPassword  = errors.New("旧密码错误")
-	ErrMissingCoinType     = errors.New("缺少type参数")
-	ErrUnsupportedCoinType = errors.New("type参数仅支持strength/select")
-	ErrUnsupportedRelationType = errors.New("不支持的关联表类型")
-	ErrMissingRelationType     = errors.New("缺少type参数")
-	ErrNoUpdateFields          = errors.New("没有可更新字段")
-	ErrResourceNameExists      = errors.New("同类型资源名称已存在")
-	ErrSkillGradeOnlyForSkills = errors.New("skill_grade仅skills类型可用")
-	ErrRelationCreateNoRows    = errors.New("创建关联失败：数据库未写入任何记录")
+	ErrMissingUserContext         = errors.New("解析后token中缺少用户信息")
+	ErrPasswordTooFrequent        = errors.New("修改密码间隔过短")
+	ErrUsernameTooFrequent        = errors.New("修改用户名间隔过短")
+	ErrHeadImageTooFrequent       = errors.New("修改头像间隔过短")
+	ErrSamePassword               = errors.New("所给新旧密码不能相同")
+	ErrInvalidOldPassword         = errors.New("旧密码错误")
+	ErrMissingCoinType            = errors.New("缺少type参数")
+	ErrUnsupportedCoinType        = errors.New("type参数仅支持strength/select")
+	ErrUnsupportedRelationType    = errors.New("不支持的关联表类型")
+	ErrMissingRelationType        = errors.New("缺少type参数")
+	ErrNoUpdateFields             = errors.New("没有可更新字段")
+	ErrResourceNameExists         = errors.New("同类型资源名称已存在")
+	ErrSkillGradeOnlyForSkills    = errors.New("skill_grade仅skills类型可用")
+	ErrRelationCreateNoRows       = errors.New("创建关联失败：数据库未写入任何记录")
 	ErrRelationCreateInconsistent = errors.New("创建关联失败：返回数据与请求不一致")
 )
 
@@ -62,16 +62,16 @@ type ProfileRelationRepository interface {
 }
 
 type ProfileService struct {
-	userRepository ProfileUserRepository
+	userRepository     ProfileUserRepository
 	relationRepository ProfileRelationRepository
-	passwordHasher PasswordHasher
+	passwordHasher     PasswordHasher
 }
 
 func NewProfileService(userRepository ProfileUserRepository, relationRepository ProfileRelationRepository, passwordHasher PasswordHasher) *ProfileService {
 	return &ProfileService{
-		userRepository: userRepository,
+		userRepository:     userRepository,
 		relationRepository: relationRepository,
-		passwordHasher: passwordHasher,
+		passwordHasher:     passwordHasher,
 	}
 }
 

@@ -119,4 +119,3 @@ func executePaginatedQuery(baseQuery *gorm.DB, pagination models.Pagination, des
 
 	return total, nil
 }
-

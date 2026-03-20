@@ -23,11 +23,11 @@ const initialAdminUserID uint = 1
 // @Description	用了id查询的话就一定只是一个确定的，而不是模糊搜索，其他参数就没用了（分页也是）
 // @Tags			admin-user
 // @Produce		json
-// @Param			user_id		query		int									false	"用户id"
-// @Param			username	query		string								false	"用户名"
-// @Param			group		query		string								false	"权限组(user/admin)"
-// @Param			page		query		int									false	"页码，默认1"
-// @Param			page_size	query		int									false	"每页多少，默认20，最大100"
+// @Param			user_id		query		int										false	"用户id"
+// @Param			username	query		string									false	"用户名"
+// @Param			group		query		string									false	"权限组(user/admin)"
+// @Param			page		query		int										false	"页码，默认1"
+// @Param			page_size	query		int										false	"每页多少，默认20，最大100"
 // @Success		200			{object}	dto.Response{data=dto.PaginatedData}	"查询成功"
 // @Failure		401			{object}	dto.Response							"登录状态异常"
 // @Failure		500			{object}	dto.Response							"数据库查询失败"
