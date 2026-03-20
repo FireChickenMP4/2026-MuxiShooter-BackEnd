@@ -266,6 +266,8 @@ func (h *ProfileHandler) CreateSelfRelationByType(c *gin.Context) {
 		return
 	}
 
+	log.Printf("创建关联请求: user_id=%d type=%s resource_id=%d", userID, relationType, req.ResourceID)
+
 	data, err := h.profileService.CreateSelfRelationByType(userID, relationType, req.ResourceID)
 	if err != nil {
 		switch {
@@ -278,6 +280,14 @@ func (h *ProfileHandler) CreateSelfRelationByType(c *gin.Context) {
 		}
 		return
 	}
+
+	if data.Resource.ResourceID == 0 || data.Resource.ResourceID != req.ResourceID {
+		log.Printf("创建关联结果异常: user_id=%d type=%s req_resource_id=%d resp_resource_id=%d", userID, relationType, req.ResourceID, data.Resource.ResourceID)
+		c.JSON(http.StatusInternalServerError, dto.Response{Code: http.StatusInternalServerError, Message: service.ErrRelationCreateInconsistent.Error()})
+		return
+	}
+
+	log.Printf("创建关联成功: user_id=%d type=%s resource_id=%d", userID, relationType, req.ResourceID)
 
 	c.JSON(http.StatusOK, dto.Response{Code: http.StatusOK, Message: "创建成功", Data: data})
 }

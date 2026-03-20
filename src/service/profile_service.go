@@ -22,6 +22,8 @@ var (
 	ErrNoUpdateFields          = errors.New("没有可更新字段")
 	ErrResourceNameExists      = errors.New("同类型资源名称已存在")
 	ErrSkillGradeOnlyForSkills = errors.New("skill_grade仅skills类型可用")
+	ErrRelationCreateNoRows    = errors.New("创建关联失败：数据库未写入任何记录")
+	ErrRelationCreateInconsistent = errors.New("创建关联失败：返回数据与请求不一致")
 )
 
 type UserRelationType string

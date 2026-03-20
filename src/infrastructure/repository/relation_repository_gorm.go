@@ -120,7 +120,7 @@ func (op *achievementRelationOperator) Create(userID uint, resourceID uint) (dto
 	}
 
 	record := models.UserAchievement{UserID: userID, AchievementID: resourceID}
-	if err = op.db.Create(&record).Error; err != nil {
+	if err = createAndEnsureOneRow(op.db, &record); err != nil {
 		return dto.CommonUserRelationData{}, err
 	}
 	if err = op.db.Preload("Achievement").Where("user_id = ? AND achievement_id = ?", userID, resourceID).First(&record).Error; err != nil {
@@ -173,7 +173,7 @@ func (op *skillRelationOperator) Create(userID uint, resourceID uint) (dto.Commo
 	}
 
 	record := models.UserSkill{UserID: userID, SkillID: resourceID}
-	if err = op.db.Create(&record).Error; err != nil {
+	if err = createAndEnsureOneRow(op.db, &record); err != nil {
 		return dto.CommonUserRelationData{}, err
 	}
 	if err = op.db.Preload("Skill").Where("user_id = ? AND skill_id = ?", userID, resourceID).First(&record).Error; err != nil {
@@ -226,7 +226,7 @@ func (op *itemRelationOperator) Create(userID uint, resourceID uint) (dto.Common
 	}
 
 	record := models.UserItem{UserID: userID, ItemID: resourceID}
-	if err = op.db.Create(&record).Error; err != nil {
+	if err = createAndEnsureOneRow(op.db, &record); err != nil {
 		return dto.CommonUserRelationData{}, err
 	}
 	if err = op.db.Preload("Item").Where("user_id = ? AND item_id = ?", userID, resourceID).First(&record).Error; err != nil {
@@ -279,7 +279,7 @@ func (op *cardRelationOperator) Create(userID uint, resourceID uint) (dto.Common
 	}
 
 	record := models.UserCard{UserID: userID, CardID: resourceID}
-	if err = op.db.Create(&record).Error; err != nil {
+	if err = createAndEnsureOneRow(op.db, &record); err != nil {
 		return dto.CommonUserRelationData{}, err
 	}
 	if err = op.db.Preload("Card").Where("user_id = ? AND card_id = ?", userID, resourceID).First(&record).Error; err != nil {
@@ -368,4 +368,15 @@ func executePaginatedQuery(baseQuery *gorm.DB, pagination models.Pagination, des
 	}
 
 	return total, nil
+}
+
+func createAndEnsureOneRow(db *gorm.DB, model interface{}) error {
+	result := db.Create(model)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return service.ErrRelationCreateNoRows
+	}
+	return nil
 }

@@ -65,7 +65,7 @@ services:
       - --skip-log-bin # 生产环境可能需要二进制日志，但开发/测试可关闭
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${DB_NAME:-myapp_db}
+      - MYSQL_DATABASE=${DB_NAME:-mini}
       - MYSQL_USER=${DB_USER:-myapp_user}
       - MYSQL_PASSWORD=${CONTAINER_DB_PASSWORD}
     volumes:
@@ -105,7 +105,7 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
-      - ./config/Caddyfile:/etc/caddy/Caddyfile
+      - ${CADDYFILE_PATH:-./Caddy/Caddyfile}:/etc/caddy/Caddyfile
       - uploads_volume:/app/uploads:ro
       - static_volume:/app/static:ro
       # 这里和app挂载同一个docker卷，然后caddy只读就可以了
